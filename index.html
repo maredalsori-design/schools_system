@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة المستودع - Supabase متكامل</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f4fa 0%, #e6edf4 100%);
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 40px;
+            padding: 2rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .login-container h2 {
+            margin-bottom: 1.5rem;
+            color: #1e3c5c;
+        }
+
+        .login-container input {
+            width: 100%;
+            padding: 14px 20px;
+            margin: 12px 0;
+            border-radius: 60px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .login-container button {
+            width: 100%;
+            padding: 12px;
+            background: #2a5f8a;
+            color: white;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+        }
+
+        .error-msg {
+            color: #b33c3c;
+            margin-top: 10px;
+        }
+
+        .app-container {
+            max-width: 1500px;
+            width: 100%;
+            margin: 0 auto;
+            display: none;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c5c, #2a5f8a);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 40px;
+        }
+
+        .logout-btn,
+        .edit-admin-btn {
+            background: #b33c3c;
+            padding: 6px 15px;
+            border-radius: 40px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            margin-left: 8px;
+        }
+
+        .edit-admin-btn {
+            background: #c97c2e;
+        }
+
+        .tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #cddfe7;
+            padding-bottom: 5px;
+        }
+
+        .tab-btn {
+            background: #eef3fc;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn.active {
+            background: #2a5f8a;
+            color: white;
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 28px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            background: #f8fbfe;
+            padding: 1rem;
+            border-radius: 24px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            flex: 1 1 200px;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #2a5f8a;
+        }
+
+        .form-control,
+        select {
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 40px;
+            border: 1px solid #cbdbe2;
+        }
+
+        .btn {
+            background: #2a5f8a;
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 40px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-success {
+            background: #2e7d5a;
+        }
+
+        .btn-danger {
+            background: #b33c3c;
+        }
+
+        .btn-warning {
+            background: #c97c2e;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: #e6f0f9;
+            padding: 12px;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #e2e8f0;
+            background: white;
+        }
+
+        .badge {
+            background: #2a5f8a;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+        }
+
+        .approve-btn,
+        .reject-btn,
+        .edit-request-btn,
+        .delete-request-btn {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 2px;
+        }
+
+        .approve-btn {
+            background: #2e7d5a;
+            color: white;
+        }
+
+        .reject-btn {
+            background: #b33c3c;
+            color: white;
+        }
+
+        .edit-request-btn {
+            background: #c97c2e;
+            color: white;
+        }
+
+        .delete-request-btn {
+            background: #b33c3c;
+            color: white;
+        }
+
+        .invoice-area {
+            background: #fef6e9;
+            border-radius: 28px;
+            padding: 1rem;
+            margin-top: 20px;
+        }
+
+        .footer-toolbar {
+            background: white;
+            border-radius: 60px;
+            padding: 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .qrcode-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 30px;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .close-modal {
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+
+        .qty-input {
+            width: 80px;
+            padding: 5px;
+            border-radius: 20px;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .pagination button {
+            background: #2a5f8a;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+
+        .pagination button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 20px;
+            backdrop-filter: blur(3px);
+            transition: all 0.3s ease;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #2a5f8a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 20px;
+            border-radius: 40px;
+        }
+
+        @media (max-width: 700px) {
+            .tab-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">جاري التحميل...</div>
+    </div>
+
+    <div id="loginScreen" class="login-container">
+        <h2><i class="fas fa-warehouse"></i> نظام إدارة المستودع</h2>
+        <input type="text" id="loginUsername" placeholder="اسم المستخدم">
+        <input type="password" id="loginPassword" placeholder="كلمة المرور">
+        <button id="loginBtn">دخول</button>
+        <div id="loginError" class="error-msg"></div>
+    </div>
+
+    <div id="appScreen" class="app-container">
+        <div class="header">
+            <h1><i class="fas fa-warehouse"></i> مستودع المدارس</h1>
+            <div class="user-info">
+                <span id="currentUserRole"></span>
+                <button class="edit-admin-btn" id="editAdminBtn"><i class="fas fa-user-edit"></i> تعديل بياناتي</button>
+                <button class="logout-btn" id="logoutBtn">خروج</button>
+            </div>
+        </div>
+        <div id="adminTabs" class="tabs" style="display:none;">
+            <button class="tab-btn active" data-tab="tab-categories"><i class="fas fa-tags"></i> الأبواب</button>
+            <button class="tab-btn" data-tab="tab-items"><i class="fas fa-cubes"></i> الأصناف</button>
+            <button class="tab-btn" data-tab="tab-schools"><i class="fas fa-school"></i> المدارس</button>
+            <button class="tab-btn" data-tab="tab-requests"><i class="fas fa-clipboard-list"></i> طلبات المدارس</button>
+            <button class="tab-btn" data-tab="tab-history"><i class="fas fa-history"></i> السجل والفواتير</button>
+            <button class="tab-btn" data-tab="tab-logs"><i class="fas fa-clipboard-list"></i> سجل الإضافات</button>
+        </div>
+        <div id="schoolTabs" class="tabs" style="display:none;">
+            <button class="tab-btn active" data-tab="school-request"><i class="fas fa-cart-plus"></i> تقديم طلب</button>
+            <button class="tab-btn" data-tab="school-requests-status"><i class="fas fa-clock"></i> حالة طلباتي</button>
+        </div>
+        <div id="adminContent">
+            <!-- Categories -->
+            <div id="tab-categories" class="tab-pane active">
+                <div class="card">
+                    <div class="form-row">
+                        <div class="form-group"><label>اسم الباب الجديد</label><input type="text" id="newCategoryName"
+                                class="form-control"></div><button class="btn btn-success" id="addCategoryBtn">إضافة
+                            باب</button>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table id="categoriesTable">
+                            <thead>
+                                <tr>
+                                    <th>الباب</th>
+                                    <th>عدد الأصناف</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriesBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="categoriesPagination"></div>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div id="tab-items" class="tab-pane">
+                <div class="card">
+                    <div class="form-row">
+                        <div class="form-group"><label>اسم الصنف</label><input type="text" id="newItemName"
+                                class="form-control"></div>
+                        <div class="form-group"><label>الباب</label><select id="newItemCategory"
+                                class="form-control"></select></div><button class="btn btn-success"
+                            id="addItemBtn">إضافة صنف</button>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table id="itemsTable">
+                            <thead>
+                                <tr>
+                                    <th>الصنف</th>
+                                    <th>الباب</th>
+                                    <th>الكمية</th>
+                                    <th>توريد</th>
+                                    <th>تعديل يدوي</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="itemsPagination"></div>
+                </div>
+            </div>
+
+            <!-- Schools -->
+            <div id="tab-schools" class="tab-pane">
+                <div class="card">
+                    <div class="form-row">
+                        <div class="form-group"><label>اسم المدرسة الجديدة</label><input type="text" id="newSchoolName"
+                                class="form-control"></div>
+                        <div class="form-group"><label>كلمة سر المدرسة</label><input type="text" id="newSchoolPassword"
+                                class="form-control"></div><button class="btn btn-success" id="addSchoolBtn">إضافة
+                            مدرسة</button>
+                    </div>
+                    <div style="overflow-x:auto">
+                        <table id="schoolsTable">
+                            <thead>
+                                <tr>
+                                    <th>المدرسة</th>
+                                    <th>اسم المستخدم</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="schoolsPagination"></div>
+                </div>
+            </div>
+
+            <!-- Requests (admin) -->
+            <div id="tab-requests" class="tab-pane">
+                <div class="card">
+                    <h3>طلبات المدارس</h3>
+                    <div style="overflow-x:auto">
+                        <table id="requestsTable">
+                            <thead>
+                                <tr>
+                                    <th>رقم الطلب</th>
+                                    <th>المدرسة</th>
+                                    <th>التاريخ</th>
+                                    <th>البنود</th>
+                                    <th>الحالة</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="requestsPagination"></div>
+                </div>
+            </div>
+
+            <!-- History (transactions) -->
+            <div id="tab-history" class="tab-pane">
+                <div class="card">
+                    <div style="overflow-x:auto">
+                        <table id="transactionsTable">
+                            <thead>
+                                <tr>
+                                    <th>رقم</th>
+                                    <th>التاريخ</th>
+                                    <th>الوقت</th>
+                                    <th>المدرسة/البائع</th>
+                                    <th>النوع</th>
+                                    <th>عدد الأصناف</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transactionsBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="transactionsPagination"></div>
+                    <div class="invoice-area">
+                        <div style="display:flex; justify-content:space-between">
+                            <h3>الفاتورة</h3>
+                            <div><button class="btn btn-warning" id="printInvoiceBtn">طباعة</button><button
+                                    class="btn btn-primary" id="generateQRBtn">عرض QR</button></div>
+                        </div>
+                        <div id="invoiceContent" style="background:white; padding:1rem; border-radius:20px;">اختر عملية
+                        </div>
+                        <div id="qrcodeContainer" class="qrcode-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logs -->
+            <div id="tab-logs" class="tab-pane">
+                <div class="card">
+                    <div style="max-height:400px; overflow-y:auto">
+                        <div id="logsContainer"></div>
+                        <div class="pagination" id="logsPagination"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- School Content -->
+        <div id="schoolContent">
+            <div id="school-request" class="tab-pane active">
+                <div class="card">
+                    <h3>تقديم طلب استجرار مواد</h3>
+                    <div class="items-list">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>الصنف</th>
+                                    <th>الكمية المطلوبة</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolRequestItemsBody"></tbody>
+                        </table>
+                        <div class="add-item-row" style="display:flex; gap:10px; margin-top:10px;">
+                            <select id="schoolItemSelect" class="form-control" style="flex:2"></select>
+                            <input type="number" id="schoolItemQty" class="form-control" min="1" value="1"
+                                style="width:100px">
+                            <button id="addSchoolRequestItemBtn" class="btn btn-success">إضافة صنف</button>
+                        </div>
+                    </div>
+                    <button id="submitSchoolRequestBtn" class="btn btn-primary"
+                        style="width:100%; margin-top:15px;">إرسال الطلب للمدير</button>
+                </div>
+            </div>
+            <div id="school-requests-status" class="tab-pane">
+                <div class="card">
+                    <h3>حالة طلباتي</h3>
+                    <div style="overflow-x:auto">
+                        <table id="schoolStatusTable">
+                            <thead>
+                                <tr>
+                                    <th>رقم الطلب</th>
+                                    <th>التاريخ</th>
+                                    <th>البنود</th>
+                                    <th>الحالة</th>
+                                    <th>ملاحظات</th>
+                                    <th>إجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schoolStatusContainer"></tbody>
+                        </table>
+                    </div>
+                    <div class="pagination" id="schoolStatusPagination"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-toolbar">
+            <button class="btn btn-success" id="exportExcelBtn">تصدير Excel</button>
+            <button class="btn btn-success" id="exportBtn">تصدير JSON</button>
+            <label for="importFile" class="btn btn-warning">استيراد JSON</label>
+            <input type="file" id="importFile" accept=".json" style="display:none;">
+        </div>
+    </div>
+
+    <script>
+        // ==================== SUPABASE CONFIG ====================
+        const SUPABASE_URL = 'https://zipsdvrdxofbvuskwjjd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppcHNkdnJkeG9mYnZ1c2t3ampkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMjQ3MjAsImV4cCI6MjA5MDgwMDcyMH0.aVQXOMEdsGnlNPpsDVbSY8Kbs0eBkA7bznJPdJO42bE';
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let currentUser = null;
+
+        // ==================== LOADING CONTROLS ====================
+        function showLoading() { document.getElementById('loadingOverlay').style.display = 'flex'; }
+        function hideLoading() { document.getElementById('loadingOverlay').style.display = 'none'; }
+        async function withLoading(promiseFn) { showLoading(); try { return await promiseFn(); } finally { hideLoading(); } }
+
+        // ==================== DATA FETCHING ====================
+        async function fetchCategories() { const { data, error } = await supabase.from('categories').select('*').order('id'); if (error) console.error(error); return data || []; }
+        async function fetchItems() { const { data, error } = await supabase.from('items').select('*, categories(name)').order('id'); if (error) console.error(error); return data || []; }
+        async function fetchSchools() { const { data, error } = await supabase.from('schools').select('*').order('id'); if (error) console.error(error); return data || []; }
+        async function fetchUsers() { const { data, error } = await supabase.from('users').select('*'); if (error) console.error(error); return data || []; }
+        async function fetchRequests() { const { data, error } = await supabase.from('requests').select('*, schools(name), request_items(*, items(name))').order('created_at', { ascending: false }); if (error) console.error(error); return data || []; }
+        async function fetchTransactions() { const { data, error } = await supabase.from('transactions').select('*, transaction_items(*, items(name)), schools(name)').order('created_at', { ascending: false }); if (error) console.error(error); return data || []; }
+        async function fetchLogs() { const { data, error } = await supabase.from('logs').select('*, users(username)').order('created_at', { ascending: false }).limit(500); if (error) console.error(error); return data || []; }
+
+        // ==================== AUTH ====================
+        async function login(username, password) {
+            const { data: user, error } = await supabase.from('users').select('*, schools(*)').eq('username', username).eq('password_hash', password).single();
+            if (error || !user) return { error: 'خطأ في البيانات' };
+            return { user, error: null };
+        }
+
+        // ==================== RPC HELPERS ====================
+        async function callRPC(funcName, params) { const { data, error } = await supabase.rpc(funcName, params); if (error) { alert(`خطأ: ${error.message}`); return null; } return data; }
+        async function supplyItem(itemId, quantity, supplier, invoice) { const result = await callRPC('process_supply', { p_item_id: itemId, p_quantity: quantity, p_supplier: supplier, p_supplier_invoice: invoice }); if (result?.success) await addLog(`توريد ${quantity} من الصنف رقم ${itemId}`); return !!result?.success; }
+        async function adjustItem(itemId, delta) { const result = await callRPC('process_adjustment', { p_item_id: itemId, p_quantity_change: delta }); if (result?.success) await addLog(`تعديل يدوي للصنف ${itemId} بمقدار ${delta}`); return !!result?.success; }
+        async function approveRequest(requestId, itemsArray) { const result = await callRPC('process_request_approval', { p_request_id: requestId, p_items: itemsArray }); if (result?.success) await addLog(`تم تنفيذ الطلب رقم ${requestId}`); return !!result?.success; }
+        async function submitSchoolRequest(schoolId, itemsArray) { const formattedItems = itemsArray.map(it => ({ item_id: it.itemId, quantity: it.quantity })); const result = await callRPC('submit_request', { p_school_id: schoolId, p_items: formattedItems }); if (result?.success) await addLog(`مدرسة قدمت طلب رقم ${result.request_number}`); return result?.success; }
+        async function addLog(action) { await supabase.from('logs').insert([{ user_id: currentUser?.id, action }]); }
+
+        // ==================== ADMIN CRUD ====================
+        async function addCategory(name) { const { error } = await supabase.from('categories').insert([{ name }]); if (error) { alert('خطأ: ' + error.message); return false; } await addLog(`إضافة باب: ${name}`); return true; }
+        async function updateCategory(id, name) { const { error } = await supabase.from('categories').update({ name }).eq('id', id); if (error) { alert(error.message); return false; } await addLog(`تعديل باب: ${name}`); return true; }
+        async function deleteCategory(id) { const { error } = await supabase.from('categories').delete().eq('id', id); if (error) { alert(error.message); return false; } await addLog('حذف باب'); return true; }
+        async function addItem(name, categoryId) { const { error } = await supabase.from('items').insert([{ name, category_id: categoryId, quantity: 0 }]); if (error) { alert(error.message); return false; } await addLog(`إضافة صنف: ${name}`); return true; }
+        async function deleteItem(id) { const { error } = await supabase.from('items').delete().eq('id', id); if (error) { alert(error.message); return false; } await addLog('حذف صنف'); return true; }
+        async function addSchool(name, password) { const { data: school, error: sErr } = await supabase.from('schools').insert([{ name }]).select().single(); if (sErr) { alert(sErr.message); return false; } const username = 'school_' + Date.now(); const { error: uErr } = await supabase.from('users').insert([{ username, password_hash: password, role: 'school', school_id: school.id }]); if (uErr) { await supabase.from('schools').delete().eq('id', school.id); alert(uErr.message); return false; } await addLog(`إضافة مدرسة: ${name}`); return true; }
+        async function deleteSchool(id) { const { error } = await supabase.from('schools').delete().eq('id', id); if (error) { alert(error.message); return false; } await addLog('حذف مدرسة'); return true; }
+        async function rejectRequest(requestId) { const { error } = await supabase.from('requests').update({ status: 'rejected' }).eq('id', requestId); if (error) { alert(error.message); return false; } await addLog(`رفض طلب رقم ${requestId}`); return true; }
+        async function updateSchoolRequest(requestId, items) { await supabase.from('request_items').delete().eq('request_id', requestId); const newItems = items.map(it => ({ request_id: requestId, item_id: it.itemId, quantity_requested: it.quantity })); const { error } = await supabase.from('request_items').insert(newItems); if (error) { alert(error.message); return false; } await addLog(`تعديل الطلب رقم ${requestId}`); return true; }
+        async function deleteSchoolRequest(requestId) { const { error } = await supabase.from('requests').delete().eq('id', requestId); if (error) { alert(error.message); return false; } await addLog(`حذف الطلب رقم ${requestId}`); return true; }
+
+        // ==================== PAGINATION HELPERS ====================
+        function renderPagination(containerId, currentPage, totalPages, callback) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = '';
+            if (totalPages <= 1) return;
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement('button');
+                btn.innerText = i;
+                if (i === currentPage) btn.disabled = true;
+                btn.onclick = () => callback(i);
+                container.appendChild(btn);
+            }
+        }
+
+        // ==================== RENDER FUNCTIONS (with pagination) ====================
+        let categoriesData = [], itemsData = [], schoolsData = [], requestsData = [], schoolStatusData = [];
+        let categoriesPage = 1, itemsPage = 1, schoolsPage = 1, requestsPage = 1, schoolStatusPage = 1;
+        const rowsPerPage = 10;
+
+        async function renderCategories() {
+            const tbody = document.getElementById('categoriesBody');
+            if (!tbody) return;
+            categoriesData = await fetchCategories();
+            const items = await fetchItems();
+            const totalPages = Math.ceil(categoriesData.length / rowsPerPage);
+            const start = (categoriesPage - 1) * rowsPerPage;
+            const paginated = categoriesData.slice(start, start + rowsPerPage);
+            tbody.innerHTML = '';
+            paginated.forEach(c => {
+                const cnt = items.filter(i => i.category_id === c.id).length;
+                tbody.innerHTML += `<tr><td>${c.name}</td><td>${cnt}</td><td><button class="btn-icon" onclick="editCategory('${c.id}','${c.name}')"><i class="fas fa-edit"></i></button> <button class="btn-icon" onclick="deleteCategoryHandler('${c.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+            renderPagination('categoriesPagination', categoriesPage, totalPages, (page) => { categoriesPage = page; renderCategories(); });
+        }
+
+        async function renderItems() {
+            const tbody = document.getElementById('itemsBody');
+            if (!tbody) return;
+            itemsData = await fetchItems();
+            const categories = await fetchCategories();
+            const totalPages = Math.ceil(itemsData.length / rowsPerPage);
+            const start = (itemsPage - 1) * rowsPerPage;
+            const paginated = itemsData.slice(start, start + rowsPerPage);
+            tbody.innerHTML = '';
+            for (const it of paginated) {
+                const cat = categories.find(c => c.id === it.category_id);
+                tbody.innerHTML += `<tr>
+                    <td>${it.name}</td>
+                    <td><span class="badge">${cat?.name || ''}</span></td>
+                    <td>${it.quantity}</td>
+                    <td><button class="supply-btn" onclick="supplyItemPrompt('${it.id}')">توريد</button></td>
+                    <td><input type="number" id="adjust-${it.id}" style="width:80px" value="0"> <button onclick="adjustItemHandler('${it.id}')">تعديل</button></td>
+                    <td><button onclick="deleteItemHandler('${it.id}')"><i class="fas fa-trash"></i></button></td>
+                </tr>`;
+            }
+            renderPagination('itemsPagination', itemsPage, totalPages, (page) => { itemsPage = page; renderItems(); });
+        }
+
+        async function renderSchools() {
+            const tbody = document.getElementById('schoolsBody');
+            if (!tbody) return;
+            schoolsData = await fetchSchools();
+            const users = await fetchUsers();
+            const totalPages = Math.ceil(schoolsData.length / rowsPerPage);
+            const start = (schoolsPage - 1) * rowsPerPage;
+            const paginated = schoolsData.slice(start, start + rowsPerPage);
+            tbody.innerHTML = '';
+            paginated.forEach(s => {
+                const user = users.find(u => u.school_id === s.id);
+                tbody.innerHTML += `<tr><td>${s.name}</td><td>${user?.username || ''}</td><td><button onclick="editSchoolUser('${s.id}','${s.name}')"><i class="fas fa-edit"></i></button> <button onclick="deleteSchoolHandler('${s.id}')"><i class="fas fa-trash"></i></button></td></tr>`;
+            });
+            renderPagination('schoolsPagination', schoolsPage, totalPages, (page) => { schoolsPage = page; renderSchools(); });
+        }
+
+        async function renderRequests() {
+            const tbody = document.getElementById('requestsBody');
+            if (!tbody) return;
+            requestsData = await fetchRequests();
+            const totalPages = Math.ceil(requestsData.length / rowsPerPage);
+            const start = (requestsPage - 1) * rowsPerPage;
+            const paginated = requestsData.slice(start, start + rowsPerPage);
+            tbody.innerHTML = '';
+            for (const req of paginated) {
+                const itemsHtml = req.request_items?.map(it => `${it.items?.name} (${it.quantity_requested})`).join('، ') || '';
+                let statusText = { pending: 'قيد الانتظار', executed: 'تم التنفيذ', approved: 'موافق عليه', rejected: 'مرفوض' }[req.status] || req.status;
+                let actions = '';
+                if (req.status === 'pending') {
+                    actions = `<button class="approve-btn" onclick="openApproveModal('${req.id}')">موافقة وتعديل</button> <button class="reject-btn" onclick="rejectRequestHandler('${req.id}')">رفض</button>`;
+                } else if (req.status === 'executed') actions = 'تم التنفيذ';
+                tbody.innerHTML += `<tr><td>${req.request_number}</td><td>${req.schools?.name || ''}</td><td>${req.date}</td><td>${itemsHtml}</td><td>${statusText}</td><td>${actions}</td></tr>`;
+            }
+            renderPagination('requestsPagination', requestsPage, totalPages, (page) => { requestsPage = page; renderRequests(); });
+        }
+
+        // Transactions and logs already have pagination (keep as is)
+        async function renderTransactionsPaginated(page = 1) {
+            const perPage = 10;
+            const transactions = await fetchTransactions();
+            const totalPages = Math.ceil(transactions.length / perPage);
+            const start = (page - 1) * perPage;
+            const paginated = transactions.slice(start, start + perPage);
+            const tbody = document.getElementById('transactionsBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            for (const t of paginated) {
+                const info = t.type === 'supply' ? `مورد: ${t.supplier}` : (t.schools?.name || 'غير معروف');
+                const typeText = { supply: 'توريد', out: 'استجرار', in: 'استرجاع', adjust: 'تعديل يدوي' }[t.type];
+                tbody.innerHTML += `<tr><td>${t.trans_number}</td><td>${t.date}</td><td>${t.time}</td><td>${info}</td><td>${typeText}</td><td>${t.transaction_items?.length || 0}</td><td><button onclick="showInvoice('${t.id}')"><i class="fas fa-file-invoice"></i></button> <button onclick="printInvoice('${t.id}')"><i class="fas fa-print"></i></button></td></tr>`;
+            }
+            renderPagination('transactionsPagination', page, totalPages, (p) => renderTransactionsPaginated(p));
+        }
+
+        async function renderLogsPaginated(page = 1) {
+            const perPage = 10;
+            const logs = await fetchLogs();
+            const totalPages = Math.ceil(logs.length / perPage);
+            const start = (page - 1) * perPage;
+            const paginated = logs.slice(start, start + perPage);
+            const container = document.getElementById('logsContainer');
+            if (!container) return;
+            let html = '<thead><tr><th>التاريخ</th><th>الوقت</th><th>المستخدم</th><th>الحدث</th></tr></thead><tbody>';
+            paginated.forEach(l => { html += `<tr><td>${l.date}</td><td>${l.time}</td><td>${l.users?.username || 'النظام'}</td><td>${l.action}</td></tr>`; });
+            html += '</tbody>';
+            container.innerHTML = html;
+            renderPagination('logsPagination', page, totalPages, (p) => renderLogsPaginated(p));
+        }
+
+        async function populateCategorySelect() {
+            const sel = document.getElementById('newItemCategory');
+            if (!sel) return;
+            const cats = await fetchCategories();
+            sel.innerHTML = '';
+            cats.forEach(c => { let opt = document.createElement('option'); opt.value = c.id; opt.textContent = c.name; sel.appendChild(opt); });
+        }
+
+        async function renderAdminData() {
+            await renderCategories();
+            await renderItems();
+            await renderSchools();
+            await renderRequests();
+            await renderTransactionsPaginated(1);
+            await renderLogsPaginated(1);
+            await populateCategorySelect();
+        }
+
+        // ==================== SCHOOL FUNCTIONS ====================
+        let schoolRequestItems = [];
+        async function renderSchoolData() {
+            const select = document.getElementById('schoolItemSelect');
+            if (select) {
+                select.innerHTML = '';
+                const items = await fetchItems();
+                items.forEach(i => { let opt = document.createElement('option'); opt.value = i.id; opt.textContent = i.name; select.appendChild(opt); });
+            }
+            renderSchoolRequestItems();
+            await renderSchoolRequestsStatus();
+        }
+
+        function renderSchoolRequestItems() {
+            const tbody = document.getElementById('schoolRequestItemsBody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            if (schoolRequestItems.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="no-data">لم تضف أي أصناف بعد</td></tr>';
+                return;
+            }
+            schoolRequestItems.forEach((it, idx) => {
+                tbody.innerHTML += `<tr><td>${it.name}</td><td>${it.quantity}</td><td><button onclick="removeSchoolRequestItem(${idx})">حذف</button></td></tr>`;
+            });
+        }
+        window.removeSchoolRequestItem = (idx) => { schoolRequestItems.splice(idx, 1); renderSchoolRequestItems(); };
+
+        async function renderSchoolRequestsStatus() {
+            const container = document.getElementById('schoolStatusContainer');
+            if (!container) return;
+            const requests = await fetchRequests();
+            schoolStatusData = requests.filter(r => r.school_id === currentUser.school_id);
+            const totalPages = Math.ceil(schoolStatusData.length / rowsPerPage);
+            const start = (schoolStatusPage - 1) * rowsPerPage;
+            const paginated = schoolStatusData.slice(start, start + rowsPerPage);
+            if (schoolStatusData.length === 0) { container.innerHTML = '<tr><td colspan="6" class="no-data">لا توجد طلبات مسجلة</td></tr>'; renderPagination('schoolStatusPagination', 1, 0, () => { }); return; }
+            let html = '';
+            for (const req of paginated) {
+                const itemsHtml = req.request_items?.map(it => `${it.items?.name} (${it.quantity_requested})`).join('، ') || '';
+                let statusText = { pending: 'قيد الانتظار', executed: 'تم التنفيذ', approved: 'موافق عليه', rejected: 'مرفوض' }[req.status];
+                let note = '';
+                if (req.status === 'executed') {
+                    const exec = req.request_items?.filter(it => it.quantity_approved > 0).map(it => `${it.items?.name} (${it.quantity_approved})`).join('، ');
+                    note = exec ? `تم صرف ${exec}` : '';
+                } else if (req.status === 'rejected') note = 'تم الرفض';
+                let actions = '';
+                if (req.status === 'pending') actions = `<button class="edit-request-btn" onclick="editSchoolRequest('${req.id}')">تعديل</button> <button class="delete-request-btn" onclick="deleteSchoolRequestHandler('${req.id}')">حذف</button>`;
+                html += `<tr><td>${req.request_number}</td><td>${req.date}</td><td>${itemsHtml}</td><td>${statusText}</td><td>${note}</td><td>${actions}</td></tr>`;
+            }
+            container.innerHTML = html;
+            renderPagination('schoolStatusPagination', schoolStatusPage, totalPages, (page) => { schoolStatusPage = page; renderSchoolRequestsStatus(); });
+        }
+
+        // ==================== EVENT HANDLERS ====================
+        window.editCategory = async (id, name) => { let newName = prompt('تعديل الاسم', name); if (newName && await updateCategory(id, newName)) await withLoading(renderCategories); };
+        window.deleteCategoryHandler = async (id) => { let items = await fetchItems(); if (items.some(i => i.category_id == id)) alert('يحتوي على أصناف'); else if (await deleteCategory(id)) await withLoading(renderCategories); };
+        window.deleteItemHandler = async (id) => { if (confirm('حذف الصنف؟') && await deleteItem(id)) await withLoading(renderItems); };
+        window.supplyItemPrompt = async (id) => { let q = parseInt(prompt('الكمية المضافة')); if (q > 0) { let sup = prompt('اسم البائع') || 'غير محدد'; let inv = prompt('رقم فاتورة البائع'); if (await supplyItem(id, q, sup, inv)) await withLoading(renderItems); } };
+        window.adjustItemHandler = async (id) => { let delta = parseInt(document.getElementById(`adjust-${id}`).value); if (isNaN(delta)) return; if (delta !== 0 && await adjustItem(id, delta)) await withLoading(renderItems); };
+        window.deleteSchoolHandler = async (id) => { if (confirm('حذف المدرسة؟') && await deleteSchool(id)) await withLoading(renderSchools); };
+        window.rejectRequestHandler = async (id) => { if (confirm('رفض الطلب؟') && await rejectRequest(id)) await withLoading(renderRequests); };
+        window.deleteSchoolRequestHandler = async (id) => { if (confirm('حذف الطلب؟') && await deleteSchoolRequest(id)) await withLoading(renderSchoolRequestsStatus); };
+
+        window.openApproveModal = async (reqId) => {
+            const requests = await fetchRequests();
+            const req = requests.find(r => r.id == reqId);
+            if (!req || req.status !== 'pending') return;
+            const items = await fetchItems();
+            const modal = document.createElement('div'); modal.className = 'modal';
+            modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3>تعديل كميات الطلب رقم ${req.request_number}</h3><span class="close-modal">&times;</span></div><table style="width:100%"><thead><tr><th>الصنف</th><th>المطلوب</th><th>المتوفرة</th><th>الكمية المراد صرفها</th></tr></thead><tbody id="modalItemsBody"></tbody></table><div style="margin-top:15px"><button class="btn btn-success" id="confirmApproveBtn">تأكيد الصرف</button><button class="btn btn-danger" id="cancelModalBtn">إلغاء</button></div></div>`;
+            document.body.appendChild(modal);
+            const tbody = modal.querySelector('#modalItemsBody');
+            for (const it of req.request_items) {
+                const item = items.find(i => i.id === it.item_id);
+                const available = item ? item.quantity : 0;
+                const maxQty = Math.min(it.quantity_requested, available);
+                tbody.innerHTML += `<tr><td>${it.items?.name}</td><td>${it.quantity_requested}</td><td>${available}</td><td><input type="number" class="qty-input" data-itemid="${it.item_id}" value="${maxQty}" min="0" max="${it.quantity_requested}"></td></tr>`;
+            }
+            modal.querySelector('.close-modal').onclick = () => modal.remove();
+            modal.querySelector('#cancelModalBtn').onclick = () => modal.remove();
+            modal.querySelector('#confirmApproveBtn').onclick = async () => {
+                const finalItems = [];
+                const inputs = modal.querySelectorAll('.qty-input');
+                for (const inp of inputs) {
+                    let qty = parseInt(inp.value);
+                    if (!isNaN(qty) && qty > 0) finalItems.push({ item_id: parseInt(inp.dataset.itemid), quantity: qty });
+                }
+                if (finalItems.length === 0) { alert('لم يتم تحديد أي كمية'); return; }
+                if (await approveRequest(reqId, finalItems)) { modal.remove(); await withLoading(renderRequests); alert('تم صرف الكميات'); }
+            };
+        };
+
+        window.editSchoolRequest = async (reqId) => {
+            const requests = await fetchRequests();
+            const req = requests.find(r => r.id == reqId);
+            if (!req || req.status !== 'pending') return alert('لا يمكن تعديل طلب غير معلق');
+            let newItems = req.request_items.map(it => ({ itemId: it.item_id, name: it.items?.name, quantity: it.quantity_requested }));
+            const modal = document.createElement('div'); modal.className = 'modal';
+            modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3>تعديل الطلب رقم ${req.request_number}</h3><span class="close-modal">&times;</span></div><div id="editRequestItemsList"></div><div class="add-item-row" style="display:flex; gap:10px; margin-top:10px;"><select id="editItemSelect" class="form-control" style="flex:2"></select><input type="number" id="editItemQty" class="form-control" min="1" value="1" style="width:100px"><button id="addEditItemBtn" class="btn btn-success">إضافة صنف</button></div><button id="saveEditRequestBtn" class="btn btn-primary">حفظ التعديلات</button></div>`;
+            document.body.appendChild(modal);
+            const container = modal.querySelector('#editRequestItemsList');
+            const renderEditItems = () => {
+                container.innerHTML = '';
+                if (newItems.length === 0) { container.innerHTML = '<div class="no-data">لا توجد أصناف</div>'; return; }
+                newItems.forEach((it, idx) => {
+                    const div = document.createElement('div');
+                    div.style.display = 'flex'; div.style.gap = '10px'; div.style.marginBottom = '8px';
+                    div.innerHTML = `<span style="flex:2">${it.name}</span><span style="width:80px">${it.quantity}</span><button onclick="window.removeEditItem(${idx})">حذف</button>`;
+                    container.appendChild(div);
+                });
+            };
+            window.removeEditItem = (idx) => { newItems.splice(idx, 1); renderEditItems(); };
+            renderEditItems();
+            const select = modal.querySelector('#editItemSelect');
+            const allItems = await fetchItems();
+            allItems.forEach(i => { let opt = document.createElement('option'); opt.value = i.id; opt.textContent = i.name; select.appendChild(opt); });
+            modal.querySelector('#addEditItemBtn').onclick = () => {
+                let opt = select.options[select.selectedIndex];
+                let qty = parseInt(modal.querySelector('#editItemQty').value);
+                if (!opt || isNaN(qty) || qty <= 0) return alert('كمية صحيحة');
+                newItems.push({ itemId: parseInt(opt.value), name: opt.textContent, quantity: qty });
+                renderEditItems();
+            };
+            modal.querySelector('#saveEditRequestBtn').onclick = async () => {
+                if (newItems.length === 0) return alert('لا يمكن أن يكون الطلب فارغاً');
+                if (await updateSchoolRequest(reqId, newItems)) { modal.remove(); await withLoading(renderSchoolRequestsStatus); alert('تم التعديل'); }
+            };
+            modal.querySelector('.close-modal').onclick = () => modal.remove();
+        };
+
+        // ==================== INVOICE ====================
+        let lastDisplayedTransactionId = null;
+        window.showInvoice = async (transId) => {
+            const trans = await fetchTransactions();
+            const t = trans.find(t => t.id == transId);
+            if (!t) return;
+            const header = t.type === 'supply' ? `توريد من: ${t.supplier} - فاتورة: ${t.supplier_invoice}` : `المدرسة: ${t.schools?.name || ''}`;
+            const typeText = { supply: 'توريد', out: 'استجرار', in: 'استرجاع', adjust: 'تعديل' }[t.type];
+            const itemsList = t.transaction_items?.map(it => `\n   - ${it.items?.name}: ${it.quantity}`).join('') || '';
+            document.getElementById('invoiceContent').innerText = `رقم الفاتورة: ${t.trans_number}\nالتاريخ: ${t.date} ${t.time}\n${header}\nالعملية: ${typeText}\nالبنود:${itemsList}`;
+            lastDisplayedTransactionId = t.id;
+            document.getElementById('qrcodeContainer').innerHTML = '';
+        };
+        window.printInvoice = async (transId) => {
+            const trans = await fetchTransactions();
+            const t = trans.find(t => t.id == transId);
+            if (!t) return;
+            const header = t.type === 'supply' ? `<p><strong>المورد:</strong> ${t.supplier} - فاتورة: ${t.supplier_invoice}</p>` : `<p><strong>المدرسة:</strong> ${t.schools?.name || ''}</p>`;
+            const itemsHtml = '<ul>' + (t.transaction_items?.map(it => `<li>${it.items?.name} - ${it.quantity}</li>`).join('') || '') + '</ul>';
+            const qrText = `الفاتورة: ${t.trans_number}\n${t.date} ${t.time}\n${header.replace(/<[^>]*>/g, '')}\nالبنود: ${t.transaction_items?.map(it => `${it.items?.name}(${it.quantity})`).join(', ')}`;
+            QRCode.toDataURL(qrText, { width: 200 }, (err, url) => {
+                const qrImg = err ? '' : `<div style="text-align:center"><img src="${url}" style="border:1px solid #ccc;padding:8px;border-radius:8px;"></div>`;
+                const win = window.open('', '_blank');
+                win.document.write(`<html dir="rtl"><head><title>فاتورة ${t.trans_number}</title><style>body{font-family:Arial;padding:30px;}</style></head><body><div style="border:2px solid #333;padding:20px;"><h2>فاتورة</h2><p><strong>رقم:</strong> ${t.trans_number}</p><p><strong>التاريخ:</strong> ${t.date} - ${t.time}</p>${header}<p><strong>البنود:</strong></p>${itemsHtml}${qrImg}</div><script>window.print();<\/script></body></html>`);
+                win.document.close();
+            });
+        };
+
+        // ==================== UI EVENT LISTENERS ====================
+        document.getElementById('loginBtn').onclick = async () => {
+            showLoading();
+            try {
+                const username = document.getElementById('loginUsername').value.trim();
+                const password = document.getElementById('loginPassword').value.trim();
+                const { user, error } = await login(username, password);
+                if (error) { document.getElementById('loginError').innerText = error; hideLoading(); return; }
+                currentUser = user;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appScreen').style.display = 'block';
+                document.getElementById('currentUserRole').innerHTML = user.role === 'admin' ? '<i class="fas fa-user-shield"></i> مدير المخزن' : `<i class="fas fa-school"></i> ${user.schools?.name}`;
+                if (user.role === 'admin') {
+                    document.getElementById('adminTabs').style.display = 'flex';
+                    document.getElementById('schoolTabs').style.display = 'none';
+                    document.getElementById('adminContent').style.display = 'block';
+                    document.getElementById('schoolContent').style.display = 'none';
+                    await renderAdminData();
+                } else {
+                    document.getElementById('adminTabs').style.display = 'none';
+                    document.getElementById('schoolTabs').style.display = 'flex';
+                    document.getElementById('adminContent').style.display = 'none';
+                    document.getElementById('schoolContent').style.display = 'block';
+                    await renderSchoolData();
+                }
+                document.querySelector(user.role === 'admin' ? '#adminTabs .tab-btn' : '#schoolTabs .tab-btn').click();
+            } catch (err) { console.error(err); alert('حدث خطأ غير متوقع'); } finally { hideLoading(); }
+        };
+        document.getElementById('logoutBtn').onclick = () => { currentUser = null; document.getElementById('loginScreen').style.display = 'block'; document.getElementById('appScreen').style.display = 'none'; };
+        document.getElementById('addCategoryBtn').onclick = async () => { let name = document.getElementById('newCategoryName').value.trim(); if (name && await addCategory(name)) { document.getElementById('newCategoryName').value = ''; await withLoading(renderCategories); } };
+        document.getElementById('addItemBtn').onclick = async () => { let name = document.getElementById('newItemName').value.trim(); let catId = document.getElementById('newItemCategory').value; if (name && catId && await addItem(name, catId)) { document.getElementById('newItemName').value = ''; await withLoading(renderItems); } };
+        document.getElementById('addSchoolBtn').onclick = async () => { let name = document.getElementById('newSchoolName').value.trim(); let pwd = document.getElementById('newSchoolPassword').value.trim(); if (name && pwd && await addSchool(name, pwd)) { document.getElementById('newSchoolName').value = ''; document.getElementById('newSchoolPassword').value = ''; await withLoading(renderSchools); } };
+        document.getElementById('addSchoolRequestItemBtn').onclick = () => { let sel = document.getElementById('schoolItemSelect'); let opt = sel.options[sel.selectedIndex]; if (!opt) return; let qty = parseInt(document.getElementById('schoolItemQty').value); if (isNaN(qty) || qty <= 0) return alert('كمية صحيحة'); schoolRequestItems.push({ itemId: parseInt(opt.value), name: opt.textContent, quantity: qty }); renderSchoolRequestItems(); document.getElementById('schoolItemQty').value = '1'; };
+        document.getElementById('submitSchoolRequestBtn').onclick = async () => { if (schoolRequestItems.length === 0) return alert('أضف بنوداً'); if (await submitSchoolRequest(currentUser.school_id, schoolRequestItems)) { schoolRequestItems = []; renderSchoolRequestItems(); await withLoading(renderSchoolRequestsStatus); alert('تم إرسال الطلب'); } };
+        document.getElementById('printInvoiceBtn').onclick = () => { if (lastDisplayedTransactionId) window.printInvoice(lastDisplayedTransactionId); else alert('اختر فاتورة'); };
+        document.getElementById('generateQRBtn').onclick = () => { if (lastDisplayedTransactionId) window.showInvoice(lastDisplayedTransactionId); else alert('اختر فاتورة'); };
+        document.getElementById('exportBtn').onclick = async () => { if (currentUser?.role !== 'admin') return alert('غير مسموح'); const data = { categories: await fetchCategories(), items: await fetchItems(), schools: await fetchSchools(), transactions: await fetchTransactions(), requests: await fetchRequests(), logs: await fetchLogs() }; const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)])); a.download = `backup_${new Date().toISOString().slice(0, 10)}.json`; a.click(); };
+        document.getElementById('exportExcelBtn').onclick = async () => { if (currentUser?.role !== 'admin') return alert('غير مسموح'); const items = await fetchItems(); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(items.map(i => ({ الصنف: i.name, الكمية: i.quantity }))), 'الأصناف'); XLSX.writeFile(wb, `warehouse_${new Date().toISOString().slice(0, 10)}.xlsx`); };
+        document.getElementById('importFile').onchange = async (e) => { if (currentUser?.role !== 'admin') return alert('غير مسموح'); const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async (ev) => { try { const imp = JSON.parse(ev.target.result); if (confirm('سيتم استبدال البيانات الحالية')) { alert('تم الاستيراد (يجب تنفيذ منطق الاستبدال)'); } } catch (ex) { alert('ملف غير صالح'); } }; reader.readAsText(file); };
+        document.querySelectorAll('#adminTabs .tab-btn, #schoolTabs .tab-btn').forEach(btn => { btn.onclick = async function () { const parent = this.parentElement; parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); this.classList.add('active'); const targetId = this.dataset.tab; if (parent.id === 'adminTabs') { document.querySelectorAll('#adminContent .tab-pane').forEach(p => p.classList.remove('active')); document.getElementById(targetId).classList.add('active'); if (targetId === 'tab-history') await withLoading(() => renderTransactionsPaginated(1)); if (targetId === 'tab-logs') await withLoading(() => renderLogsPaginated(1)); if (targetId === 'tab-requests') await withLoading(renderRequests); if (targetId === 'tab-categories') await withLoading(renderCategories); if (targetId === 'tab-items') await withLoading(renderItems); if (targetId === 'tab-schools') await withLoading(renderSchools); } else { document.querySelectorAll('#schoolContent .tab-pane').forEach(p => p.classList.remove('active')); document.getElementById(targetId).classList.add('active'); if (targetId === 'school-requests-status') await withLoading(renderSchoolRequestsStatus); } }; });
+    </script>
+</body>
+
+</html>
