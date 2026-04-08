@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- CryptoJS for password hashing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <style>
         * { font-family: 'Cairo', sans-serif; }
         .loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, #1e40af, #3b82f6); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease; }
@@ -71,7 +73,7 @@
 <div id="mainApp" class="hidden min-h-screen bg-slate-50">
     <nav class="glass-dark text-white sticky top-0 z-50 shadow-lg"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"><div class="flex items-center justify-between h-16"><div class="flex items-center gap-4"><button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-lg hover:bg-white/10"><i class="fas fa-bars text-xl"></i></button><div class="flex items-center gap-3"><div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center"><i class="fas fa-warehouse text-lg"></i></div><span class="font-bold text-lg hidden sm:block">مستودع المدارس</span></div></div><div class="flex items-center gap-4"><div class="hidden md:flex items-center gap-2 text-sm text-slate-300"><i class="fas fa-user-circle"></i><span id="userNameDisplay">المستخدم</span><span id="userRoleDisplay" class="px-2 py-1 bg-blue-600/30 rounded text-xs">مدير</span></div><button onclick="showNotifications()" class="relative p-2 rounded-lg hover:bg-white/10"><i class="fas fa-bell text-xl"></i><span id="notificationBadge" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full hidden"></span></button><button onclick="logout()" class="p-2 rounded-lg hover:bg-white/10 text-red-400"><i class="fas fa-sign-out-alt text-xl"></i></button></div></div></div></nav>
     <div class="flex max-w-7xl mx-auto">
-        <aside id="sidebar" class="fixed lg:sticky top-16 right-0 h-[calc(100vh-4rem)] w-64 bg-white shadow-xl transform translate-x-full lg:translate-x-0 transition-transform z-40 overflow-y-auto"><div class="p-4 space-y-2"><div id="adminMenu"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-4">لوحة التحكم</p><button onclick="showPage('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="dashboard"><i class="fas fa-home w-5"></i><span>الرئيسية</span></button><button onclick="showPage('categories')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="categories"><i class="fas fa-folder-tree w-5"></i><span>الفئات والأصناف</span></button><button onclick="showPage('inventory')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="inventory"><i class="fas fa-boxes w-5"></i><span>المخزون والفواتير</span></button><button onclick="showPage('schools')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="schools"><i class="fas fa-school w-5"></i><span>المدارس والحسابات</span></button><button onclick="showPage('requests')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all relative" data-page="requests"><i class="fas fa-clipboard-list w-5"></i><span>طلبات المدارس</span><span id="requestsBadge" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span></button><button onclick="showPage('logs')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="logs"><i class="fas fa-history w-5"></i><span>سجل العمليات</span></button><button onclick="showPage('messages')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="messages"><i class="fas fa-envelope w-5"></i><span>رسائل المدارس</span><span id="messagesBadge" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span></button><button onclick="showPage('reports')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="reports"><i class="fas fa-chart-bar w-5"></i><span>التقارير والنسخ الاحتياطي</span></button></div><div id="schoolMenu" class="hidden"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-4">قسم المدرسة</p><button onclick="showPage('schoolDashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="schoolDashboard"><i class="fas fa-home w-5"></i><span>الرئيسية</span></button><button onclick="showPage('newRequest')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="newRequest"><i class="fas fa-plus-circle w-5"></i><span>طلب مواد جديد</span></button><button onclick="showPage('myRequests')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="myRequests"><i class="fas fa-list w-5"></i><span>طلباتي السابقة</span></button><button onclick="showPage('myMessages')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="myMessages"><i class="fas fa-comment-dots w-5"></i><span>رسائلي</span></button><button onclick="openContactModal()" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all"><i class="fas fa-paper-plane w-5"></i><span>تواصل مع المدير</span></button></div></div></aside>
+        <aside id="sidebar" class="fixed lg:sticky top-16 right-0 h-[calc(100vh-4rem)] w-64 bg-white shadow-xl transform translate-x-full lg:translate-x-0 transition-transform z-40 overflow-y-auto"><div class="p-4 space-y-2"><div id="adminMenu"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-4">لوحة التحكم</p><button onclick="showPage('dashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="dashboard"><i class="fas fa-home w-5"></i><span>الرئيسية</span></button><button onclick="showPage('categories')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="categories"><i class="fas fa-folder-tree w-5"></i><span>الفئات والأصناف</span></button><button onclick="showPage('inventory')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="inventory"><i class="fas fa-boxes w-5"></i><span>المخزون والفواتير</span></button><button onclick="showPage('schools')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="schools"><i class="fas fa-school w-5"></i><span>المدارس والحسابات</span></button><button onclick="showPage('requests')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all relative" data-page="requests"><i class="fas fa-clipboard-list w-5"></i><span>طلبات المدارس</span><span id="requestsBadge" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span></button><button onclick="showPage('logs')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="logs"><i class="fas fa-history w-5"></i><span>سجل العمليات</span></button><button onclick="showPage('messages')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="messages"><i class="fas fa-envelope w-5"></i><span>رسائل المدارس</span><span id="messagesBadge" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">0</span></button><button onclick="showPage('reports')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="reports"><i class="fas fa-chart-bar w-5"></i><span>التقارير والنسخ الاحتياطي</span></button><button onclick="openAdminSettingsModal()" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all mt-4 border-t pt-4"><i class="fas fa-user-cog w-5"></i><span>تعديل بيانات المدير</span></button></div><div id="schoolMenu" class="hidden"><p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 px-4">قسم المدرسة</p><button onclick="showPage('schoolDashboard')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="schoolDashboard"><i class="fas fa-home w-5"></i><span>الرئيسية</span></button><button onclick="showPage('newRequest')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="newRequest"><i class="fas fa-plus-circle w-5"></i><span>طلب مواد جديد</span></button><button onclick="showPage('myRequests')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="myRequests"><i class="fas fa-list w-5"></i><span>طلباتي السابقة</span></button><button onclick="showPage('myMessages')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all" data-page="myMessages"><i class="fas fa-comment-dots w-5"></i><span>رسائلي</span></button><button onclick="openContactModal()" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 text-slate-700 transition-all"><i class="fas fa-paper-plane w-5"></i><span>تواصل مع المدير</span></button></div></div></aside>
         <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
         <main class="flex-1 p-4 lg:p-8 w-full">
             <!-- Dashboard Admin -->
@@ -84,19 +86,19 @@
             <div id="schools" class="page-section"><div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h2 class="text-2xl font-bold text-slate-800">المدارس والحسابات</h2><p class="text-slate-500">إدارة المدارس وإنشاء حسابات لها</p></div><button onclick="openModal('addSchoolModal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg btn-hover"><i class="fas fa-plus"></i> مدرسة جديدة</button></div><div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="p-4 border-b border-slate-200 flex items-center justify-between"><h3 class="font-bold text-lg">قائمة المدارس</h3><input type="text" id="searchSchools" placeholder="بحث..." class="px-4 py-2 border border-slate-300 rounded-lg text-sm w-64" onkeyup="searchSchools()"></div><div class="overflow-x-auto"><table class="w-full data-table text-sm"><thead><tr><th>اسم المدرسة</th><th>اسم المستخدم</th><th>كلمة المرور</th><th>تاريخ الإنشاء</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="schoolsTable"><tr><td colspan="6" class="text-center py-8">لا توجد مدارس مسجلة</td></tr></tbody></table></div></div></div>
             <!-- Requests Admin -->
             <div id="requests" class="page-section"><div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">طلبات المدارس</h2><p class="text-slate-500">مراجعة ومعالجة طلبات المواد من المدارس (يمكن تعديل الكميات قبل الموافقة)</p></div><div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="p-4 border-b border-slate-200 flex gap-2"><button onclick="filterRequests('all')" class="filter-btn px-4 py-2 rounded-lg bg-blue-600 text-white text-sm" data-filter="all">الكل</button><button onclick="filterRequests('pending')" class="filter-btn px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm" data-filter="pending">معلقة</button><button onclick="filterRequests('approved')" class="filter-btn px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm" data-filter="approved">تمت الموافقة</button><button onclick="filterRequests('rejected')" class="filter-btn px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm" data-filter="rejected">مرفوضة</button></div><div class="overflow-x-auto"><table class="w-full data-table text-sm"><thead><tr><th>رقم الطلب</th><th>المدرسة</th><th>التاريخ</th><th>عدد الأصناف</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="requestsTable"><tr><td colspan="6" class="text-center py-8">لا توجد طلبات</td></tr></tbody></table></div></div></div>
-            <!-- Logs with operation number -->
+            <!-- Logs -->
             <div id="logs" class="page-section"><div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"><div><h2 class="text-2xl font-bold text-slate-800">سجل العمليات</h2><p class="text-slate-500">سجل كامل بجميع العمليات مع رقم خاص لكل عملية</p></div><div class="flex gap-2"><button onclick="exportLogsToExcel()" class="bg-green-600 text-white px-4 py-2 rounded-lg btn-hover"><i class="fas fa-file-excel"></i> تصدير Excel</button><button onclick="clearOldLogs()" class="bg-red-600 text-white px-4 py-2 rounded-lg btn-hover"><i class="fas fa-trash"></i> حذف القديم</button></div></div><div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="p-4 border-b border-slate-200"><div class="grid grid-cols-1 md:grid-cols-5 gap-4"><input type="date" id="logDateFrom" class="px-4 py-2 border rounded-lg" placeholder="من تاريخ"><input type="date" id="logDateTo" class="px-4 py-2 border rounded-lg" placeholder="إلى تاريخ"><select id="logType" class="px-4 py-2 border rounded-lg"><option value="">كل الأنواع</option><option value="login">تسجيل دخول</option><option value="add">إضافة</option><option value="update">تعديل</option><option value="delete">حذف</option><option value="transaction">حركة مخزون</option><option value="request">طلب</option><option value="message">رسالة</option></select><input type="text" id="searchOperationNumber" placeholder="رقم العملية" class="px-4 py-2 border rounded-lg"><button onclick="searchOperationByNumber()" class="bg-blue-600 text-white px-4 py-2 rounded-lg">بحث</button><button onclick="printOperationResult()" class="bg-slate-600 text-white px-4 py-2 rounded-lg">طباعة النتيجة</button></div></div><div class="overflow-x-auto"><table class="w-full data-table text-sm"><thead class="sticky top-0"><tr><th>رقم العملية</th><th>التاريخ والوقت</th><th>المستخدم</th><th>النوع</th><th>الوصف</th><th>التفاصيل</th><th>طباعة</th></tr></thead><tbody id="logsTable"><tr><td colspan="7" class="text-center py-8">لا توجد سجلات</td></tr></tbody></table></div><div id="logsPagination" class="pagination"></div></div></div>
-            <!-- Messages Admin with reply -->
+            <!-- Messages Admin -->
             <div id="messages" class="page-section"><div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">رسائل المدارس</h2><p class="text-slate-500">الرسائل الواردة من المدارس والرد عليها</p></div><div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto"><table class="w-full data-table text-sm"><thead><tr><th>رقم الرسالة</th><th>من المدرسة</th><th>التاريخ</th><th>الموضوع</th><th>الرسالة</th><th>الرد</th><th>إجراءات</th></tr></thead><tbody id="messagesTable"><tr><td colspan="7" class="text-center py-8">لا توجد رسائل</td></tr></tbody></table></div></div></div>
             <!-- Reports -->
             <div id="reports" class="page-section"><div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">التقارير والنسخ الاحتياطي</h2><p class="text-slate-500">توليد التقارير ونسخ البيانات احتياطياً</p></div><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><div class="bg-white rounded-xl shadow-sm p-6 card-hover"><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4"><i class="fas fa-boxes text-blue-600 text-xl"></i></div><h3 class="font-bold text-lg mb-2">تقرير المخزون</h3><p class="text-slate-500 text-sm mb-4">تقرير كامل بالأصناف والكميات المتوفرة</p><div class="flex gap-2"><button onclick="generateInventoryReport('excel')" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm">Excel</button><button onclick="generateInventoryReport('print')" class="flex-1 bg-slate-600 text-white py-2 rounded-lg text-sm">طباعة</button></div></div><div class="bg-white rounded-xl shadow-sm p-6 card-hover"><div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4"><i class="fas fa-exchange-alt text-purple-600 text-xl"></i></div><h3 class="font-bold text-lg mb-2">تقرير الحركات</h3><p class="text-slate-500 text-sm mb-4">تقرير بجميع حركات المخزون والفواتير</p><div class="flex gap-2"><button onclick="generateTransactionsReport('excel')" class="flex-1 bg-green-600 text-white py-2 rounded-lg text-sm">Excel</button><button onclick="generateTransactionsReport('print')" class="flex-1 bg-slate-600 text-white py-2 rounded-lg text-sm">طباعة</button></div></div><div class="bg-white rounded-xl shadow-sm p-6 card-hover"><div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4"><i class="fas fa-database text-red-600 text-xl"></i></div><h3 class="font-bold text-lg mb-2">نسخة احتياطية كاملة</h3><p class="text-slate-500 text-sm mb-4">تصدير جميع بيانات النظام بنسخة احتياطية</p><button onclick="createFullBackup()" class="w-full bg-red-600 text-white py-2 rounded-lg btn-hover">تحميل النسخة الاحتياطية</button></div><div class="bg-white rounded-xl shadow-sm p-6 card-hover md:col-span-2 lg:col-span-3"><div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-4"><i class="fas fa-upload text-yellow-600 text-xl"></i></div><h3 class="font-bold text-lg mb-2">استعادة النسخة الاحتياطية</h3><p class="text-slate-500 text-sm mb-4">استعادة البيانات من ملف نسخة احتياطية سابقاً</p><div class="flex gap-4 items-end"><div class="flex-1"><input type="file" id="restoreFile" accept=".json" class="w-full px-4 py-2 border rounded-lg" onchange="previewRestoreFile(this)"></div><button onclick="restoreBackup()" id="restoreBtn" disabled class="bg-yellow-600 text-white px-6 py-2 rounded-lg disabled:opacity-50">استعادة</button></div><div id="restorePreview" class="mt-4 hidden p-4 bg-slate-50 rounded-lg text-sm"></div></div></div></div>
             <!-- School Dashboard -->
             <div id="schoolDashboard" class="page-section"><div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">لوحة تحكم المدرسة</h2><p class="text-slate-500" id="schoolNameDisplay">مرحباً بك في نظام الطلبات</p></div><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"><div class="bg-white rounded-xl p-6 shadow-sm card-hover border-r-4 border-blue-500"><div class="flex items-center justify-between"><div><p class="text-slate-500 text-sm">طلباتي الكلية</p><p class="text-2xl font-bold text-slate-800" id="schoolTotalRequests">0</p></div><div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center"><i class="fas fa-clipboard-list text-blue-600 text-xl"></i></div></div></div><div class="bg-white rounded-xl p-6 shadow-sm card-hover border-r-4 border-yellow-500"><div class="flex items-center justify-between"><div><p class="text-slate-500 text-sm">الطلبات المعلقة</p><p class="text-2xl font-bold text-slate-800" id="schoolPendingRequests">0</p></div><div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center"><i class="fas fa-clock text-yellow-600 text-xl"></i></div></div></div><div class="bg-white rounded-xl p-6 shadow-sm card-hover border-r-4 border-green-500"><div class="flex items-center justify-between"><div><p class="text-slate-500 text-sm">الطلبات المنفذة</p><p class="text-2xl font-bold text-slate-800" id="schoolCompletedRequests">0</p></div><div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center"><i class="fas fa-check-circle text-green-600 text-xl"></i></div></div></div></div><div class="bg-white rounded-xl shadow-sm p-6"><h3 class="font-bold text-lg mb-4">آخر طلباتي</h3><div class="overflow-x-auto"><table class="w-full data-table text-sm"><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>عدد الأصناف</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="schoolRecentRequests"><tr><td colspan="5" class="text-center py-8">لا توجد طلبات سابقة</td></tr></tbody></table></div></div></div>
-            <!-- New Request (school) -->
+            <!-- New Request -->
             <div id="newRequest" class="page-section"><div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">طلب مواد جديد</h2><p class="text-slate-500">إنشاء طلب جديد (لا تظهر لك الكميات المتوفرة)</p></div><div class="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto"><form id="newRequestForm" class="space-y-6"><div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg"><div><p class="text-sm text-slate-500">رقم الطلب</p><p class="text-lg font-bold text-slate-800" id="requestNumber">REQ-2024-001</p></div><div><p class="text-sm text-slate-500">التاريخ</p><p class="text-lg font-bold text-slate-800" id="requestDate">2024-01-15</p></div></div><div><div class="flex items-center justify-between mb-4"><h3 class="font-bold text-lg">الأصناف المطلوبة</h3><button type="button" onclick="addRequestItem()" class="text-blue-600 text-sm">+ إضافة صنف</button></div><div id="requestItemsList" class="space-y-3"></div><p id="emptyRequestItems" class="text-center py-8 text-slate-400">لم تتم إضافة أي أصناف بعد</p></div><div><label class="block text-sm font-medium text-slate-700 mb-1">ملاحظات إضافية</label><textarea id="requestNotes" rows="3" class="w-full px-4 py-2 border rounded-lg"></textarea></div><div class="flex gap-4"><button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-lg btn-hover font-semibold">إرسال الطلب</button><button type="button" onclick="showPage('schoolDashboard')" class="px-6 py-3 border border-slate-300 rounded-lg">إلغاء</button></div></form></div></div>
             <!-- My Requests -->
             <div id="myRequests" class="page-section"><div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">طلباتي السابقة</h2><p class="text-slate-500">جميع الطلبات التي قمت بتقديمها</p></div><div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="p-4 border-b border-slate-200 flex gap-2"><button onclick="filterMyRequests('all')" class="my-filter-btn px-4 py-2 rounded-lg bg-blue-600 text-white text-sm" data-filter="all">الكل</button><button onclick="filterMyRequests('pending')" class="my-filter-btn px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm" data-filter="pending">معلقة</button><button onclick="filterMyRequests('completed')" class="my-filter-btn px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm" data-filter="completed">منفذة</button></div><div class="overflow-x-auto"><table class="w-full data-table text-sm"><thead><tr><th>رقم الطلب</th><th>التاريخ</th><th>عدد الأصناف</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody id="myRequestsTable"><tr><td colspan="5" class="text-center py-8">لا توجد طلبات</td></tr></tbody></table></div></div></div>
-            <!-- My Messages (School) -->
+            <!-- My Messages -->
             <div id="myMessages" class="page-section"><div class="mb-6"><h2 class="text-2xl font-bold text-slate-800">رسائلي مع المدير</h2><p class="text-slate-500">جميع الرسائل والردود</p></div><div class="bg-white rounded-xl shadow-sm overflow-hidden"><div class="overflow-x-auto"><table class="w-full data-table text-sm"><thead><tr><th>رقم الرسالة</th><th>التاريخ</th><th>الموضوع</th><th>الرسالة</th><th>الرد</th></tr></thead><tbody id="myMessagesTable"><tr><td colspan="5" class="text-center py-8">لا توجد رسائل</td></tr></tbody></table></div></div></div>
         </main>
     </div>
@@ -108,6 +110,7 @@
 <div id="addSchoolModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"><div class="bg-white rounded-xl shadow-2xl w-full max-w-md"><div class="p-6 border-b flex justify-between"><h3 class="text-lg font-bold">إضافة مدرسة جديدة</h3><button onclick="closeModal('addSchoolModal')"><i class="fas fa-times"></i></button></div><form id="addSchoolForm" class="p-6 space-y-4"><div><label>اسم المدرسة</label><input type="text" id="schoolName" required class="w-full px-4 py-2 border rounded-lg"></div><div><label>اسم المستخدم</label><input type="text" id="schoolUsername" required class="w-full px-4 py-2 border rounded-lg"></div><div><label>كلمة المرور</label><div class="relative"><input type="text" id="schoolPassword" required class="w-full pl-10 pr-4 py-2 border rounded-lg"><button type="button" onclick="generatePassword()" class="absolute left-2 top-1.5 text-xs bg-blue-100 px-2 py-1 rounded">توليد</button></div></div><div class="flex gap-3"><button type="button" onclick="closeModal('addSchoolModal')" class="flex-1 border rounded-lg py-2">إلغاء</button><button type="submit" class="flex-1 bg-blue-600 text-white rounded-lg py-2">حفظ</button></div></form></div></div>
 <div id="requestDetailsModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"><div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"><div class="p-6 border-b sticky top-0 bg-white flex justify-between"><div><h3 class="text-lg font-bold">تفاصيل الطلب</h3><p class="text-sm text-slate-500" id="modalRequestNumber">#REQ-001</p></div><button onclick="closeModal('requestDetailsModal')"><i class="fas fa-times"></i></button></div><div class="p-6 space-y-4"><div class="grid grid-cols-2 gap-4 text-sm"><div><span>المدرسة:</span><span id="modalSchoolName" class="mr-1"></span></div><div><span>التاريخ:</span><span id="modalRequestDate" class="mr-1"></span></div><div><span>الحالة:</span><span id="modalRequestStatus" class="mr-1"></span></div></div><div class="border-t pt-4"><h4 class="font-bold mb-3">الأصناف المطلوبة (يمكن تعديل الكميات)</h4><div id="editableRequestItems"></div></div><div id="modalRequestNotes" class="border-t pt-4 hidden"><h4 class="font-bold mb-2">ملاحظات</h4><p class="text-sm bg-slate-50 p-3 rounded"></p></div><div id="adminActions" class="flex gap-3 pt-4 border-t hidden"><button onclick="processRequest('approve')" class="flex-1 bg-green-600 text-white py-2 rounded-lg">موافقة وتنفيذ (بعد التعديل)</button><button onclick="processRequest('reject')" class="flex-1 bg-red-600 text-white py-2 rounded-lg">رفض</button><button onclick="printRequestInvoice()" class="px-4 bg-slate-600 text-white py-2 rounded-lg">طباعة</button></div><div id="schoolActions" class="flex gap-3 pt-4 border-t hidden"><button onclick="printRequestInvoice()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg">طباعة الفاتورة</button></div></div></div></div>
 <div id="editQuantityModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"><div class="bg-white rounded-xl shadow-2xl w-full max-w-md"><div class="p-6 border-b flex justify-between"><h3 class="text-lg font-bold">تعديل كمية الصنف</h3><button onclick="closeModal('editQuantityModal')"><i class="fas fa-times"></i></button></div><div class="p-6 space-y-4"><div><label>اسم الصنف</label><input type="text" id="editItemName" readonly class="w-full px-4 py-2 border rounded-lg bg-slate-100"></div><div><label>الكمية الجديدة</label><input type="number" id="editItemQuantity" class="w-full px-4 py-2 border rounded-lg"></div><div class="flex gap-3"><button onclick="closeModal('editQuantityModal')" class="flex-1 border rounded-lg py-2">إلغاء</button><button onclick="saveEditedQuantity()" class="flex-1 bg-blue-600 text-white rounded-lg py-2">حفظ</button></div></div></div></div>
+<div id="adminSettingsModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"><div class="bg-white rounded-xl shadow-2xl w-full max-w-md"><div class="p-6 border-b flex justify-between"><h3 class="text-lg font-bold">تعديل بيانات المدير</h3><button onclick="closeModal('adminSettingsModal')"><i class="fas fa-times"></i></button></div><div class="p-6 space-y-4"><div><label>اسم المستخدم الحالي</label><input type="text" id="currentAdminUser" class="w-full px-4 py-2 border rounded-lg"></div><div><label>كلمة المرور الحالية</label><input type="password" id="currentAdminPass" class="w-full px-4 py-2 border rounded-lg"></div><div class="border-t my-2"></div><div><label>اسم المستخدم الجديد</label><input type="text" id="newAdminUser" class="w-full px-4 py-2 border rounded-lg"></div><div><label>كلمة المرور الجديدة</label><input type="password" id="newAdminPass" class="w-full px-4 py-2 border rounded-lg"></div><div><label>تأكيد كلمة المرور الجديدة</label><input type="password" id="confirmAdminPass" class="w-full px-4 py-2 border rounded-lg"></div><div id="adminSettingsError" class="hidden text-red-600 text-sm"></div><div class="flex gap-3"><button onclick="closeModal('adminSettingsModal')" class="flex-1 border rounded-lg py-2">إلغاء</button><button onclick="updateAdminCredentials()" class="flex-1 bg-blue-600 text-white rounded-lg py-2">تحديث</button></div></div></div></div>
 <div id="replyModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"><div class="bg-white rounded-xl shadow-2xl w-full max-w-md"><div class="p-6 border-b flex justify-between"><h3 class="text-lg font-bold">الرد على الرسالة</h3><button onclick="closeModal('replyModal')"><i class="fas fa-times"></i></button></div><div class="p-6 space-y-4"><div><label>الرد</label><textarea id="replyText" rows="4" class="w-full px-4 py-2 border rounded-lg"></textarea></div><div class="flex gap-3"><button onclick="closeModal('replyModal')" class="flex-1 border rounded-lg py-2">إلغاء</button><button onclick="sendReply()" class="flex-1 bg-blue-600 text-white rounded-lg py-2">إرسال الرد</button></div></div></div></div>
 <div id="contactModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4"><div class="bg-white rounded-xl shadow-2xl w-full max-w-md"><div class="p-6 border-b flex justify-between"><h3 class="text-lg font-bold">إرسال رسالة إلى المدير</h3><button onclick="closeModal('contactModal')"><i class="fas fa-times"></i></button></div><div class="p-6 space-y-4"><div><label>الموضوع</label><input type="text" id="contactSubject" class="w-full px-4 py-2 border rounded-lg"></div><div><label>الرسالة</label><textarea id="contactMessage" rows="4" class="w-full px-4 py-2 border rounded-lg"></textarea></div><div class="flex gap-3"><button onclick="closeModal('contactModal')" class="flex-1 border rounded-lg py-2">إلغاء</button><button onclick="sendMessageToAdmin()" class="flex-1 bg-blue-600 text-white rounded-lg py-2">إرسال</button></div></div></div></div>
 <div id="printInvoice" class="hidden print-only p-8"><div class="max-w-2xl mx-auto border-2 border-slate-800 p-6"><div class="text-center border-b-2 pb-4 mb-4"><h1 class="text-2xl font-bold">فاتورة صرف مواد</h1><p class="text-sm">نظام إدارة مستودع المدارس</p></div><div class="grid grid-cols-2 gap-4 mb-4 text-sm"><div><p><strong>رقم الفاتورة:</strong> <span id="printInvoiceNumber"></span></p><p><strong>التاريخ:</strong> <span id="printDate"></span></p></div><div class="text-left"><p><strong>المدرسة:</strong> <span id="printSchool"></span></p><p><strong>الحالة:</strong> <span id="printStatus"></span></p></div></div><table class="w-full border-2 mb-4"><thead><tr class="border-b-2"><th class="p-2 border-l">م</th><th class="p-2 border-l text-right">اسم الصنف</th><th class="p-2 border-l">الكمية</th><th class="p-2">التوقيع</th></tr></thead><tbody id="printItems"></tbody></table><div class="grid grid-cols-2 gap-8 mt-8 pt-4 border-t-2"><div class="text-center"><p class="mb-8">توقيع المستلم</p><p>_________________</p></div><div class="text-center"><p class="mb-8">توقيع أمين المستودع</p><p>_________________</p></div></div></div></div>
@@ -123,7 +126,41 @@
     let lastSearchResult = null;
     let currentReplyMessageId = null;
 
-    // Helper: generate operation number (sequential)
+    // Helper: hash password using SHA-256
+    function hashPassword(password) {
+        return CryptoJS.SHA256(password).toString();
+    }
+
+    // Admin credentials management
+    function getAdminCredentials() {
+        let stored = localStorage.getItem('admin_credentials');
+        if (stored) {
+            return JSON.parse(stored);
+        } else {
+            // Default credentials: admin / admin123
+            let defaultCred = {
+                username: hashPassword('admin'),
+                password: hashPassword('admin123')
+            };
+            localStorage.setItem('admin_credentials', JSON.stringify(defaultCred));
+            return defaultCred;
+        }
+    }
+
+    function verifyAdminLogin(username, password) {
+        let cred = getAdminCredentials();
+        return (hashPassword(username) === cred.username && hashPassword(password) === cred.password);
+    }
+
+    function updateAdminCredentials(newUsername, newPassword) {
+        let newCred = {
+            username: hashPassword(newUsername),
+            password: hashPassword(newPassword)
+        };
+        localStorage.setItem('admin_credentials', JSON.stringify(newCred));
+    }
+
+    // Helper: generate operation number
     let lastOpNumber = 0;
     function getNextOpNumber() {
         let saved = localStorage.getItem('lastOpNumber');
@@ -175,84 +212,781 @@
     }
 
     // ==================== AUTH ====================
-    async function handleLogin(e) { e.preventDefault(); const email = document.getElementById('loginEmail').value, password = document.getElementById('loginPassword').value, errorDiv = document.getElementById('loginError'); if (email === 'admin' && password === 'admin123') { currentUser = { id: 'admin', name: 'المدير', role: 'admin' }; currentRole = 'admin'; await completeLogin(); addLog('login', 'تسجيل دخول المدير'); return; } const school = schools.find(s => s.username === email && s.password === password && s.active); if (school) { currentUser = { id: school.id, name: school.name, role: 'school' }; currentRole = 'school'; currentSchoolId = school.id; await completeLogin(); addLog('login', `تسجيل دخول مدرسة: ${school.name}`); return; } errorDiv.innerText = 'بيانات غير صحيحة'; errorDiv.classList.remove('hidden'); }
-    async function completeLogin() { document.getElementById('loginScreen').classList.add('hidden'); document.getElementById('mainApp').classList.remove('hidden'); document.getElementById('userNameDisplay').innerText = currentUser.name; document.getElementById('userRoleDisplay').innerText = currentRole === 'admin' ? 'مدير' : 'مدرسة'; if (currentRole === 'admin') { document.getElementById('adminMenu').style.display = 'block'; document.getElementById('schoolMenu').classList.add('hidden'); showPage('dashboard'); await refreshAdminDashboard(); refreshCategoriesList(); refreshItemsSelects(); refreshSchoolsTable(); refreshRequestsTable(); refreshLogs(); refreshTransactionsTable(); refreshMessagesTable(); } else { document.getElementById('adminMenu').style.display = 'none'; document.getElementById('schoolMenu').classList.remove('hidden'); showPage('schoolDashboard'); await refreshSchoolDashboard(); refreshMyRequestsTable(); refreshMyMessagesTable(); } if (document.getElementById('rememberMe').checked) localStorage.setItem('warehouse_user', JSON.stringify({ email: currentUser.id, role: currentRole })); else localStorage.removeItem('warehouse_user'); }
-    function autoLogin(user) { if (user.role === 'admin') { currentUser = { id: 'admin', name: 'المدير', role: 'admin' }; currentRole = 'admin'; completeLogin(); } else { const school = schools.find(s => s.id === user.email); if (school) { currentUser = { id: school.id, name: school.name, role: 'school' }; currentRole = 'school'; currentSchoolId = school.id; completeLogin(); } } }
-    function logout() { currentUser = null; currentRole = null; localStorage.removeItem('warehouse_user'); location.reload(); }
-    function togglePassword() { let pwd = document.getElementById('loginPassword'), icon = document.getElementById('eyeIcon'); if (pwd.type === 'password') { pwd.type = 'text'; icon.classList.replace('fa-eye','fa-eye-slash'); } else { pwd.type = 'password'; icon.classList.replace('fa-eye-slash','fa-eye'); } }
-    function showResetPassword() { showToast('تواصل مع المدير', 'info'); }
-    function showToast(msg, type='success') { let toast = document.createElement('div'); toast.className = `p-3 rounded-lg shadow-lg text-white text-sm ${type==='success'?'bg-green-600':type==='error'?'bg-red-600':'bg-blue-600'}`; toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':'info-circle'} ml-2"></i>${msg}`; document.getElementById('toastContainer').appendChild(toast); setTimeout(()=>toast.remove(),3000); }
-    function openModal(id) { let el = document.getElementById(id); el.classList.remove('hidden'); el.style.display = 'flex'; }
-    function closeModal(id) { let el = document.getElementById(id); el.classList.add('hidden'); el.style.display = 'none'; }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('translate-x-full'); document.getElementById('sidebarOverlay').classList.toggle('hidden'); }
-    function showPage(pageId) { document.querySelectorAll('.page-section').forEach(s=>s.classList.remove('active')); document.getElementById(pageId).classList.add('active'); if(window.innerWidth<1024) toggleSidebar(); if(pageId==='dashboard' && currentRole==='admin') refreshAdminDashboard(); else if(pageId==='categories') refreshCategoriesList(); else if(pageId==='inventory') refreshTransactionsTable(); else if(pageId==='schools') refreshSchoolsTable(); else if(pageId==='requests') refreshRequestsTable(); else if(pageId==='logs') refreshLogs(); else if(pageId==='messages') refreshMessagesTable(); else if(pageId==='schoolDashboard') refreshSchoolDashboard(); else if(pageId==='myRequests') refreshMyRequestsTable(); else if(pageId==='newRequest') initNewRequest(); else if(pageId==='myMessages') refreshMyMessagesTable(); }
+    async function handleLogin(e) {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+        
+        // Check admin with hashed credentials
+        if (verifyAdminLogin(email, password)) {
+            currentUser = { id: 'admin', name: 'المدير', role: 'admin' };
+            currentRole = 'admin';
+            await completeLogin();
+            addLog('login', 'تسجيل دخول المدير');
+            return;
+        }
+        
+        // Check school accounts (plain text for simplicity)
+        const school = schools.find(s => s.username === email && s.password === password && s.active);
+        if (school) {
+            currentUser = { id: school.id, name: school.name, role: 'school' };
+            currentRole = 'school';
+            currentSchoolId = school.id;
+            await completeLogin();
+            addLog('login', `تسجيل دخول مدرسة: ${school.name}`);
+            return;
+        }
+        
+        errorDiv.innerText = 'بيانات غير صحيحة';
+        errorDiv.classList.remove('hidden');
+    }
+    
+    async function completeLogin() {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('mainApp').classList.remove('hidden');
+        document.getElementById('userNameDisplay').innerText = currentUser.name;
+        document.getElementById('userRoleDisplay').innerText = currentRole === 'admin' ? 'مدير' : 'مدرسة';
+        if (currentRole === 'admin') {
+            document.getElementById('adminMenu').style.display = 'block';
+            document.getElementById('schoolMenu').classList.add('hidden');
+            showPage('dashboard');
+            await refreshAdminDashboard();
+            refreshCategoriesList();
+            refreshItemsSelects();
+            refreshSchoolsTable();
+            refreshRequestsTable();
+            refreshLogs();
+            refreshTransactionsTable();
+            refreshMessagesTable();
+        } else {
+            document.getElementById('adminMenu').style.display = 'none';
+            document.getElementById('schoolMenu').classList.remove('hidden');
+            showPage('schoolDashboard');
+            await refreshSchoolDashboard();
+            refreshMyRequestsTable();
+            refreshMyMessagesTable();
+        }
+        if (document.getElementById('rememberMe').checked) localStorage.setItem('warehouse_user', JSON.stringify({ email: currentUser.id, role: currentRole }));
+        else localStorage.removeItem('warehouse_user');
+    }
+    
+    function autoLogin(user) {
+        if (user.role === 'admin') {
+            currentUser = { id: 'admin', name: 'المدير', role: 'admin' };
+            currentRole = 'admin';
+            completeLogin();
+        } else {
+            const school = schools.find(s => s.id === user.email);
+            if (school) {
+                currentUser = { id: school.id, name: school.name, role: 'school' };
+                currentRole = 'school';
+                currentSchoolId = school.id;
+                completeLogin();
+            }
+        }
+    }
+    
+    function logout() {
+        currentUser = null;
+        currentRole = null;
+        localStorage.removeItem('warehouse_user');
+        location.reload();
+    }
+    
+    function togglePassword() {
+        let pwd = document.getElementById('loginPassword'), icon = document.getElementById('eyeIcon');
+        if (pwd.type === 'password') {
+            pwd.type = 'text';
+            icon.classList.replace('fa-eye','fa-eye-slash');
+        } else {
+            pwd.type = 'password';
+            icon.classList.replace('fa-eye-slash','fa-eye');
+        }
+    }
+    
+    function showResetPassword() {
+        showToast('تواصل مع المدير لإعادة تعيين كلمة المرور', 'info');
+    }
+    
+    function showToast(msg, type='success') {
+        let toast = document.createElement('div');
+        toast.className = `p-3 rounded-lg shadow-lg text-white text-sm ${type==='success'?'bg-green-600':type==='error'?'bg-red-600':'bg-blue-600'}`;
+        toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':'info-circle'} ml-2"></i>${msg}`;
+        document.getElementById('toastContainer').appendChild(toast);
+        setTimeout(()=>toast.remove(),3000);
+    }
+    
+    function openModal(id) {
+        let el = document.getElementById(id);
+        el.classList.remove('hidden');
+        el.style.display = 'flex';
+    }
+    function closeModal(id) {
+        let el = document.getElementById(id);
+        el.classList.add('hidden');
+        el.style.display = 'none';
+    }
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('translate-x-full');
+        document.getElementById('sidebarOverlay').classList.toggle('hidden');
+    }
+    function showPage(pageId) {
+        document.querySelectorAll('.page-section').forEach(s=>s.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        if(window.innerWidth<1024) toggleSidebar();
+        if(pageId==='dashboard' && currentRole==='admin') refreshAdminDashboard();
+        else if(pageId==='categories') refreshCategoriesList();
+        else if(pageId==='inventory') refreshTransactionsTable();
+        else if(pageId==='schools') refreshSchoolsTable();
+        else if(pageId==='requests') refreshRequestsTable();
+        else if(pageId==='logs') refreshLogs();
+        else if(pageId==='messages') refreshMessagesTable();
+        else if(pageId==='schoolDashboard') refreshSchoolDashboard();
+        else if(pageId==='myRequests') refreshMyRequestsTable();
+        else if(pageId==='newRequest') initNewRequest();
+        else if(pageId==='myMessages') refreshMyMessagesTable();
+    }
+
+    // ==================== ADMIN SETTINGS ====================
+    function openAdminSettingsModal() {
+        document.getElementById('currentAdminUser').value = '';
+        document.getElementById('currentAdminPass').value = '';
+        document.getElementById('newAdminUser').value = '';
+        document.getElementById('newAdminPass').value = '';
+        document.getElementById('confirmAdminPass').value = '';
+        document.getElementById('adminSettingsError').classList.add('hidden');
+        openModal('adminSettingsModal');
+    }
+    
+    function updateAdminCredentials() {
+        let currentUserInput = document.getElementById('currentAdminUser').value;
+        let currentPassInput = document.getElementById('currentAdminPass').value;
+        let newUser = document.getElementById('newAdminUser').value;
+        let newPass = document.getElementById('newAdminPass').value;
+        let confirmPass = document.getElementById('confirmAdminPass').value;
+        let errorDiv = document.getElementById('adminSettingsError');
+        
+        if (!verifyAdminLogin(currentUserInput, currentPassInput)) {
+            errorDiv.innerText = 'اسم المستخدم أو كلمة المرور الحالية غير صحيحة';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+        if (!newUser || !newPass) {
+            errorDiv.innerText = 'الرجاء إدخال اسم المستخدم الجديد وكلمة المرور الجديدة';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+        if (newPass !== confirmPass) {
+            errorDiv.innerText = 'كلمة المرور الجديدة وتأكيدها غير متطابقين';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+        
+        updateAdminCredentials(newUser, newPass);
+        addLog('update', 'تم تحديث بيانات دخول المدير');
+        showToast('تم تحديث البيانات، سيتم تسجيل الخروج لإعادة الدخول');
+        closeModal('adminSettingsModal');
+        setTimeout(() => {
+            logout();
+        }, 1500);
+    }
 
     // ==================== ADMIN: CATEGORIES & ITEMS ====================
-    function refreshCategoriesList() { let cont = document.getElementById('categoriesList'); if(!categories.length){cont.innerHTML='<p class="text-center py-8">لا توجد فئات</p>';return;} cont.innerHTML = categories.map(c=>`<div class="flex justify-between p-3 bg-slate-50 rounded-lg"><div><span class="font-medium">${c.name}</span><p class="text-xs">${c.description||''}</p></div><button onclick="deleteCategory('${c.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></div>`).join(''); }
-    function handleAddCategory(e) { e.preventDefault(); let name = document.getElementById('categoryName').value, desc = document.getElementById('categoryDesc').value; categories.push({id:'cat'+Date.now(),name,description:desc}); saveData(); refreshCategoriesList(); refreshItemsSelects(); closeModal('addCategoryModal'); addLog('add',`إضافة فئة ${name}`); showToast('تمت الإضافة'); document.getElementById('addCategoryForm').reset(); }
-    function deleteCategory(id) { if(confirm('حذف الفئة وجميع أصنافها؟')){ categories=categories.filter(c=>c.id!==id); items=items.filter(i=>i.categoryId!==id); saveData(); refreshCategoriesList(); refreshItemsTable(); refreshItemsSelects(); addLog('delete',`حذف فئة ${id}`); showToast('تم الحذف'); } }
-    function refreshItemsTable() { let tbody = document.getElementById('itemsTable'); if(!items.length){tbody.innerHTML='<td><td colspan="7" class="text-center py-8">لا توجد أصناف</td></tr>';return;} tbody.innerHTML = items.map(i=>{ let cat = categories.find(c=>c.id===i.categoryId); let status = i.quantity<=i.minQty?'<span class="badge badge-danger">مخزون منخفض</span>':'<span class="badge badge-success">متوفر</span>'; return `<tr><td>${i.name}</td><td>${cat?cat.name:'-'}</td><td>${i.quantity} ${i.unit||''}</td><td>${i.minQty}</td><td>${status}</td><td><button onclick="openEditQuantityModal('${i.id}')" class="text-blue-600"><i class="fas fa-edit"></i> تعديل</button></td><td><button onclick="deleteItem('${i.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`; }).join(''); }
-    function handleAddItem(e) { e.preventDefault(); let catId = document.getElementById('itemCategory').value, name = document.getElementById('itemName').value, minQty = parseInt(document.getElementById('itemMinQty').value), initQty = parseInt(document.getElementById('itemInitialQty').value), unit = document.getElementById('itemUnit').value; items.push({id:'item'+Date.now(),categoryId:catId,name,quantity:initQty,minQty,unit}); saveData(); refreshItemsTable(); refreshItemsSelects(); closeModal('addItemModal'); addLog('add',`إضافة صنف ${name}`); showToast('تمت الإضافة'); document.getElementById('addItemForm').reset(); }
-    function deleteItem(id) { if(confirm('حذف الصنف؟')){ items=items.filter(i=>i.id!==id); saveData(); refreshItemsTable(); refreshItemsSelects(); addLog('delete',`حذف صنف ${id}`); showToast('تم الحذف'); } }
-    function openEditQuantityModal(itemId) { let item = items.find(i=>i.id===itemId); if(item){ editItemId = itemId; document.getElementById('editItemName').value = item.name; document.getElementById('editItemQuantity').value = item.quantity; openModal('editQuantityModal'); } }
-    function saveEditedQuantity() { let newQty = parseInt(document.getElementById('editItemQuantity').value); if(isNaN(newQty)) return showToast('قيمة غير صحيحة','error'); let item = items.find(i=>i.id===editItemId); if(item){ item.quantity = newQty; saveData(); refreshItemsTable(); refreshItemsSelects(); addLog('update',`تعديل كمية ${item.name} إلى ${newQty}`); showToast('تم التعديل'); closeModal('editQuantityModal'); refreshAdminDashboard(); } }
-    function refreshItemsSelects() { let opts = items.map(i=>`<option value="${i.id}">${i.name} (${i.quantity})</option>`).join(''); document.getElementById('manualItem').innerHTML = '<option value="">اختر الصنف</option>'+opts; document.getElementById('invoiceItem').innerHTML = '<option value="">اختر الصنف</option>'+opts; let catSelect = document.getElementById('itemCategory'); catSelect.innerHTML = '<option value="">اختر الفئة</option>'+categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join(''); }
-    function searchItems() { let term = document.getElementById('searchItems').value.toLowerCase(); let filtered = items.filter(i=>i.name.includes(term)); let tbody = document.getElementById('itemsTable'); if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" class="text-center py-8">لا توجد نتائج</td></tr>';return;} tbody.innerHTML = filtered.map(i=>{ let cat = categories.find(c=>c.id===i.categoryId); let status = i.quantity<=i.minQty?'<span class="badge badge-danger">مخزون منخفض</span>':'<span class="badge badge-success">متوفر</span>'; return `<tr><td>${i.name}</td><td>${cat?cat.name:'-'}</td><td>${i.quantity}</td><td>${i.minQty}</td><td>${status}</td><td><button onclick="openEditQuantityModal('${i.id}')" class="text-blue-600"><i class="fas fa-edit"></i> تعديل</button></td><td><button onclick="deleteItem('${i.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`; }).join(''); }
+    function refreshCategoriesList() {
+        let cont = document.getElementById('categoriesList');
+        if(!categories.length){cont.innerHTML='<p class="text-center py-8">لا توجد فئات</p>';return;}
+        cont.innerHTML = categories.map(c=>`<div class="flex justify-between p-3 bg-slate-50 rounded-lg"><div><span class="font-medium">${c.name}</span><p class="text-xs">${c.description||''}</p></div><button onclick="deleteCategory('${c.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></div>`).join('');
+    }
+    function handleAddCategory(e) {
+        e.preventDefault();
+        let name = document.getElementById('categoryName').value, desc = document.getElementById('categoryDesc').value;
+        categories.push({id:'cat'+Date.now(),name,description:desc});
+        saveData();
+        refreshCategoriesList();
+        refreshItemsSelects();
+        closeModal('addCategoryModal');
+        addLog('add',`إضافة فئة ${name}`);
+        showToast('تمت الإضافة');
+        document.getElementById('addCategoryForm').reset();
+    }
+    function deleteCategory(id) {
+        if(confirm('حذف الفئة وجميع أصنافها؟')){
+            categories=categories.filter(c=>c.id!==id);
+            items=items.filter(i=>i.categoryId!==id);
+            saveData();
+            refreshCategoriesList();
+            refreshItemsTable();
+            refreshItemsSelects();
+            addLog('delete',`حذف فئة ${id}`);
+            showToast('تم الحذف');
+        }
+    }
+    function refreshItemsTable() {
+        let tbody = document.getElementById('itemsTable');
+        if(!items.length){tbody.innerHTML='<tr><td colspan="7" class="text-center py-8">لا توجد أصناف</td></tr>';return;}
+        tbody.innerHTML = items.map(i=>{
+            let cat = categories.find(c=>c.id===i.categoryId);
+            let status = i.quantity<=i.minQty?'<span class="badge badge-danger">مخزون منخفض</span>':'<span class="badge badge-success">متوفر</span>';
+            return `<tr><td>${i.name}</td><td>${cat?cat.name:'-'}</td><td>${i.quantity} ${i.unit||''}</td><td>${i.minQty}</td><td>${status}</td><td><button onclick="openEditQuantityModal('${i.id}')" class="text-blue-600"><i class="fas fa-edit"></i> تعديل</button></td><td><button onclick="deleteItem('${i.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`;
+        }).join('');
+    }
+    function handleAddItem(e) {
+        e.preventDefault();
+        let catId = document.getElementById('itemCategory').value, name = document.getElementById('itemName').value, minQty = parseInt(document.getElementById('itemMinQty').value), initQty = parseInt(document.getElementById('itemInitialQty').value), unit = document.getElementById('itemUnit').value;
+        items.push({id:'item'+Date.now(),categoryId:catId,name,quantity:initQty,minQty,unit});
+        saveData();
+        refreshItemsTable();
+        refreshItemsSelects();
+        closeModal('addItemModal');
+        addLog('add',`إضافة صنف ${name}`);
+        showToast('تمت الإضافة');
+        document.getElementById('addItemForm').reset();
+    }
+    function deleteItem(id) {
+        if(confirm('حذف الصنف؟')){
+            items=items.filter(i=>i.id!==id);
+            saveData();
+            refreshItemsTable();
+            refreshItemsSelects();
+            addLog('delete',`حذف صنف ${id}`);
+            showToast('تم الحذف');
+        }
+    }
+    function openEditQuantityModal(itemId) {
+        let item = items.find(i=>i.id===itemId);
+        if(item){
+            editItemId = itemId;
+            document.getElementById('editItemName').value = item.name;
+            document.getElementById('editItemQuantity').value = item.quantity;
+            openModal('editQuantityModal');
+        }
+    }
+    function saveEditedQuantity() {
+        let newQty = parseInt(document.getElementById('editItemQuantity').value);
+        if(isNaN(newQty)) return showToast('قيمة غير صحيحة','error');
+        let item = items.find(i=>i.id===editItemId);
+        if(item){
+            item.quantity = newQty;
+            saveData();
+            refreshItemsTable();
+            refreshItemsSelects();
+            addLog('update',`تعديل كمية ${item.name} إلى ${newQty}`);
+            showToast('تم التعديل');
+            closeModal('editQuantityModal');
+            refreshAdminDashboard();
+        }
+    }
+    function refreshItemsSelects() {
+        let opts = items.map(i=>`<option value="${i.id}">${i.name} (${i.quantity})</option>`).join('');
+        document.getElementById('manualItem').innerHTML = '<option value="">اختر الصنف</option>'+opts;
+        document.getElementById('invoiceItem').innerHTML = '<option value="">اختر الصنف</option>'+opts;
+        let catSelect = document.getElementById('itemCategory');
+        catSelect.innerHTML = '<option value="">اختر الفئة</option>'+categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    }
+    function searchItems() {
+        let term = document.getElementById('searchItems').value.toLowerCase();
+        let filtered = items.filter(i=>i.name.includes(term));
+        let tbody = document.getElementById('itemsTable');
+        if(!filtered.length){tbody.innerHTML='<tr><td colspan="7" class="text-center py-8">لا توجد نتائج</td></tr>';return;}
+        tbody.innerHTML = filtered.map(i=>{
+            let cat = categories.find(c=>c.id===i.categoryId);
+            let status = i.quantity<=i.minQty?'<span class="badge badge-danger">مخزون منخفض</span>':'<span class="badge badge-success">متوفر</span>';
+            return `<tr><td>${i.name}</td><td>${cat?cat.name:'-'}</td><td>${i.quantity}</td><td>${i.minQty}</td><td>${status}</td><td><button onclick="openEditQuantityModal('${i.id}')" class="text-blue-600"><i class="fas fa-edit"></i> تعديل</button></td><td><button onclick="deleteItem('${i.id}')" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`;
+        }).join('');
+    }
 
     // ==================== INVENTORY ====================
-    function handleManualAdd(e) { e.preventDefault(); let itemId = document.getElementById('manualItem').value, qty = parseInt(document.getElementById('manualQty').value), type = document.getElementById('manualType').value, notes = document.getElementById('manualNotes').value; let item = items.find(i=>i.id===itemId); if(!item) return showToast('اختر صنفاً','error'); if(type==='remove' && item.quantity<qty) return showToast('كمية غير كافية','error'); let oldQty = item.quantity; item.quantity += (type==='add'?qty:-qty); let opNumber = getNextOpNumber(); transactions.unshift({id:Date.now(), opNumber, date:new Date().toISOString(), type:type==='add'?'إضافة يدوية':'سحب يدوي', itemName:item.name, quantity:qty, reference:notes, user:currentUser.name}); saveData(); refreshTransactionsTable(); addLog('transaction', `${type==='add'?'إضافة':'سحب'} يدوي ${item.name} ${qty}`, notes); showToast('تمت العملية'); document.getElementById('manualAddForm').reset(); refreshAdminDashboard(); refreshItemsSelects(); }
-    function handleInvoice(e) { e.preventDefault(); let invNo = document.getElementById('invoiceNumber').value, supplier = document.getElementById('supplierName').value, itemId = document.getElementById('invoiceItem').value, qty = parseInt(document.getElementById('invoiceQty').value); let item = items.find(i=>i.id===itemId); if(!item) return showToast('اختر صنفاً','error'); item.quantity += qty; let opNumber = getNextOpNumber(); transactions.unshift({id:Date.now(), opNumber, date:new Date().toISOString(), type:'فاتورة توريد', itemName:item.name, quantity:qty, reference:`${invNo} - ${supplier}`, user:currentUser.name}); saveData(); refreshTransactionsTable(); addLog('transaction', `فاتورة توريد ${invNo} ${item.name} +${qty}`, `المورد: ${supplier}`); showToast('تم تسجيل الفاتورة'); document.getElementById('invoiceForm').reset(); refreshAdminDashboard(); refreshItemsSelects(); }
-    function refreshTransactionsTable() { let tbody = document.getElementById('transactionsTable'); if(!transactions.length){tbody.innerHTML='<td><td colspan="7" class="text-center py-8">لا توجد حركات</td></tr>';return;} tbody.innerHTML = transactions.slice(0,50).map(t=>`<tr><td>${t.opNumber || '-'}</td><td>${new Date(t.date).toLocaleString()}</td><td>${t.type}</td><td>${t.itemName}</td><td>${t.quantity}</td><td>${t.reference}</td><td>${t.user}</td></tr>`).join(''); }
+    function handleManualAdd(e) {
+        e.preventDefault();
+        let itemId = document.getElementById('manualItem').value, qty = parseInt(document.getElementById('manualQty').value), type = document.getElementById('manualType').value, notes = document.getElementById('manualNotes').value;
+        let item = items.find(i=>i.id===itemId);
+        if(!item) return showToast('اختر صنفاً','error');
+        if(type==='remove' && item.quantity<qty) return showToast('كمية غير كافية','error');
+        item.quantity += (type==='add'?qty:-qty);
+        let opNumber = getNextOpNumber();
+        transactions.unshift({id:Date.now(), opNumber, date:new Date().toISOString(), type:type==='add'?'إضافة يدوية':'سحب يدوي', itemName:item.name, quantity:qty, reference:notes, user:currentUser.name});
+        saveData();
+        refreshTransactionsTable();
+        addLog('transaction', `${type==='add'?'إضافة':'سحب'} يدوي ${item.name} ${qty}`, notes);
+        showToast('تمت العملية');
+        document.getElementById('manualAddForm').reset();
+        refreshAdminDashboard();
+        refreshItemsSelects();
+    }
+    function handleInvoice(e) {
+        e.preventDefault();
+        let invNo = document.getElementById('invoiceNumber').value, supplier = document.getElementById('supplierName').value, itemId = document.getElementById('invoiceItem').value, qty = parseInt(document.getElementById('invoiceQty').value);
+        let item = items.find(i=>i.id===itemId);
+        if(!item) return showToast('اختر صنفاً','error');
+        item.quantity += qty;
+        let opNumber = getNextOpNumber();
+        transactions.unshift({id:Date.now(), opNumber, date:new Date().toISOString(), type:'فاتورة توريد', itemName:item.name, quantity:qty, reference:`${invNo} - ${supplier}`, user:currentUser.name});
+        saveData();
+        refreshTransactionsTable();
+        addLog('transaction', `فاتورة توريد ${invNo} ${item.name} +${qty}`, `المورد: ${supplier}`);
+        showToast('تم تسجيل الفاتورة');
+        document.getElementById('invoiceForm').reset();
+        refreshAdminDashboard();
+        refreshItemsSelects();
+    }
+    function refreshTransactionsTable() {
+        let tbody = document.getElementById('transactionsTable');
+        if(!transactions.length){tbody.innerHTML='<tr><td colspan="7" class="text-center py-8">لا توجد حركات</td></tr>';return;}
+        tbody.innerHTML = transactions.slice(0,50).map(t=>`<tr><td>${t.opNumber || '-'}</td><td>${new Date(t.date).toLocaleString()}</td><td>${t.type}</td><td>${t.itemName}</td><td>${t.quantity}</td><td>${t.reference}</td><td>${t.user}</td></tr>`).join('');
+    }
 
     // ==================== SCHOOLS ====================
-    function refreshSchoolsTable() { let tbody = document.getElementById('schoolsTable'); if(!schools.length){tbody.innerHTML='<td><td colspan="6" class="text-center py-8">لا توجد مدارس مسجلة</td></tr>';return;} tbody.innerHTML = schools.map(s=>`<tr><td>${s.name}</td><td>${s.username}</td><td>${s.password}</td><td>${new Date(s.createdAt).toLocaleDateString()}</td><td><span class="badge ${s.active?'badge-success':'badge-danger'}">${s.active?'نشط':'موقوف'}</span></td><td><button onclick="toggleSchoolStatus('${s.id}')" class="text-yellow-600 ml-2"><i class="fas fa-toggle-${s.active?'on':'off'}"></i></button><button onclick="deleteSchool('${s.id}')" class="text-red-600"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
-    function handleAddSchool(e) { e.preventDefault(); let name = document.getElementById('schoolName').value, username = document.getElementById('schoolUsername').value, password = document.getElementById('schoolPassword').value; if(!password) password = Math.random().toString(36).slice(-8); schools.push({id:'sch'+Date.now(),name,username,password,active:true,createdAt:new Date().toISOString()}); saveData(); refreshSchoolsTable(); closeModal('addSchoolModal'); addLog('add',`إضافة مدرسة ${name}`); showToast(`تمت الإضافة، كلمة المرور: ${password}`); document.getElementById('addSchoolForm').reset(); }
-    function toggleSchoolStatus(id) { let s = schools.find(s=>s.id===id); if(s) s.active = !s.active; saveData(); refreshSchoolsTable(); addLog('update',`تغيير حالة ${s.name} إلى ${s.active?'نشط':'موقوف'}`); }
-    function deleteSchool(id) { if(confirm('حذف المدرسة سيحذف طلباتها')){ schools=schools.filter(s=>s.id!==id); requests=requests.filter(r=>r.schoolId!==id); saveData(); refreshSchoolsTable(); addLog('delete',`حذف مدرسة ${id}`); showToast('تم الحذف'); } }
-    function generatePassword() { document.getElementById('schoolPassword').value = Math.random().toString(36).slice(-8); }
-    function searchSchools() { let term = document.getElementById('searchSchools').value.toLowerCase(); let filtered = schools.filter(s=>s.name.includes(term)||s.username.includes(term)); let tbody = document.getElementById('schoolsTable'); if(!filtered.length){tbody.innerHTML='<td><td colspan="6" class="text-center py-8">لا توجد نتائج</td></tr>';return;} tbody.innerHTML = filtered.map(s=>`<tr><td>${s.name}</td><td>${s.username}</td><td>${s.password}</td><td>${new Date(s.createdAt).toLocaleDateString()}</td><td><span class="badge ${s.active?'badge-success':'badge-danger'}">${s.active?'نشط':'موقوف'}</span></td><td><button onclick="toggleSchoolStatus('${s.id}')" class="text-yellow-600"><i class="fas fa-toggle-${s.active?'on':'off'}"></i></button><button onclick="deleteSchool('${s.id}')" class="text-red-600 ml-2"><i class="fas fa-trash"></i></button></td></tr>`).join(''); }
+    function refreshSchoolsTable() {
+        let tbody = document.getElementById('schoolsTable');
+        if(!schools.length){tbody.innerHTML='<tr><td colspan="6" class="text-center py-8">لا توجد مدارس مسجلة</td></tr>';return;}
+        tbody.innerHTML = schools.map(s=>`<tr><td>${s.name}</td><td>${s.username}</td><td>${s.password}</td><td>${new Date(s.createdAt).toLocaleDateString()}</td><td><span class="badge ${s.active?'badge-success':'badge-danger'}">${s.active?'نشط':'موقوف'}</span></td><td><button onclick="toggleSchoolStatus('${s.id}')" class="text-yellow-600 ml-2"><i class="fas fa-toggle-${s.active?'on':'off'}"></i></button><button onclick="deleteSchool('${s.id}')" class="text-red-600"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+    }
+    function handleAddSchool(e) {
+        e.preventDefault();
+        let name = document.getElementById('schoolName').value, username = document.getElementById('schoolUsername').value, password = document.getElementById('schoolPassword').value;
+        if(!password) password = Math.random().toString(36).slice(-8);
+        schools.push({id:'sch'+Date.now(),name,username,password,active:true,createdAt:new Date().toISOString()});
+        saveData();
+        refreshSchoolsTable();
+        closeModal('addSchoolModal');
+        addLog('add',`إضافة مدرسة ${name}`);
+        showToast(`تمت الإضافة، كلمة المرور: ${password}`);
+        document.getElementById('addSchoolForm').reset();
+    }
+    function toggleSchoolStatus(id) {
+        let s = schools.find(s=>s.id===id);
+        if(s) s.active = !s.active;
+        saveData();
+        refreshSchoolsTable();
+        addLog('update',`تغيير حالة ${s.name} إلى ${s.active?'نشط':'موقوف'}`);
+    }
+    function deleteSchool(id) {
+        if(confirm('حذف المدرسة سيحذف طلباتها')){
+            schools=schools.filter(s=>s.id!==id);
+            requests=requests.filter(r=>r.schoolId!==id);
+            saveData();
+            refreshSchoolsTable();
+            addLog('delete',`حذف مدرسة ${id}`);
+            showToast('تم الحذف');
+        }
+    }
+    function generatePassword() {
+        document.getElementById('schoolPassword').value = Math.random().toString(36).slice(-8);
+    }
+    function searchSchools() {
+        let term = document.getElementById('searchSchools').value.toLowerCase();
+        let filtered = schools.filter(s=>s.name.includes(term)||s.username.includes(term));
+        let tbody = document.getElementById('schoolsTable');
+        if(!filtered.length){tbody.innerHTML='<tr><td colspan="6" class="text-center py-8">لا توجد نتائج</td></tr>';return;}
+        tbody.innerHTML = filtered.map(s=>`<tr><td>${s.name}</td><td>${s.username}</td><td>${s.password}</td><td>${new Date(s.createdAt).toLocaleDateString()}</td><td><span class="badge ${s.active?'badge-success':'badge-danger'}">${s.active?'نشط':'موقوف'}</span></td><td><button onclick="toggleSchoolStatus('${s.id}')" class="text-yellow-600"><i class="fas fa-toggle-${s.active?'on':'off'}"></i></button><button onclick="deleteSchool('${s.id}')" class="text-red-600 ml-2"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+    }
 
     // ==================== REQUESTS ====================
-    function initNewRequest() { document.getElementById('requestItemsList').innerHTML = ''; document.getElementById('emptyRequestItems').style.display = 'block'; document.getElementById('requestNumber').innerText = `REQ-${Date.now()}`; document.getElementById('requestDate').innerText = new Date().toLocaleDateString('ar-EG'); document.getElementById('requestNotes').value = ''; }
-    function addRequestItem() { if(items.length===0) return showToast('لا توجد أصناف','error'); let div = document.createElement('div'); div.className = 'flex gap-2 items-center bg-slate-50 p-3 rounded-lg'; div.innerHTML = `<select class="item-select flex-1 px-3 py-2 border rounded-lg">${items.map(i=>`<option value="${i.id}">${i.name}</option>`).join('')}</select><input type="number" class="item-qty w-24 px-2 py-2 border rounded-lg" placeholder="الكمية" min="1" value="1"><button type="button" onclick="this.parentElement.remove()" class="text-red-500"><i class="fas fa-times"></i></button>`; document.getElementById('requestItemsList').appendChild(div); document.getElementById('emptyRequestItems').style.display = 'none'; }
-    function handleNewRequest(e) { e.preventDefault(); let itemsDivs = document.querySelectorAll('#requestItemsList > div'); if(itemsDivs.length===0) return showToast('أضف صنفاً','error'); let reqItems = []; for(let div of itemsDivs){ let itemId = div.querySelector('.item-select').value; let qty = parseInt(div.querySelector('.item-qty').value); let item = items.find(i=>i.id===itemId); if(item) reqItems.push({itemId,itemName:item.name,quantity:qty}); } if(reqItems.length===0) return showToast('أصناف غير صالحة','error'); let requestId = 'req'+Date.now(); let opNumber = getNextOpNumber(); requests.push({id:requestId, opNumber, schoolId:currentSchoolId, schoolName:currentUser.name, date:new Date().toISOString(), items:reqItems, notes:document.getElementById('requestNotes').value, status:'pending'}); saveData(); addLog('request', `طلب جديد من ${currentUser.name}`, `${reqItems.length} صنف`); showToast('تم إرسال الطلب'); showPage('myRequests'); refreshMyRequestsTable(); if(currentRole==='admin') refreshRequestsTable(); }
-    function refreshRequestsTable() { let filtered = currentFilter==='all' ? requests : requests.filter(r=>r.status===currentFilter); let tbody = document.getElementById('requestsTable'); if(!filtered.length){tbody.innerHTML='<td><td colspan="6" class="text-center py-8">لا توجد طلبات</td></tr>';return;} tbody.innerHTML = filtered.map(r=>`<tr><td>${r.id}</td><td>${r.schoolName}</td><td>${new Date(r.date).toLocaleDateString()}</td><td>${r.items.length}</td><td><span class="badge ${r.status==='pending'?'badge-warning':r.status==='approved'?'badge-success':'badge-danger'}">${r.status==='pending'?'معلق':r.status==='approved'?'موافق عليه':'مرفوض'}</span></td><td><button onclick="showRequestDetails('${r.id}')" class="text-blue-600"><i class="fas fa-eye"></i></button></td></tr>`).join(''); document.getElementById('requestsBadge').classList.toggle('hidden', requests.filter(r=>r.status==='pending').length===0); }
-    function filterRequests(filter) { currentFilter = filter; refreshRequestsTable(); document.querySelectorAll('.filter-btn').forEach(btn=>{ if(btn.dataset.filter===filter) btn.classList.add('bg-blue-600','text-white'); else btn.classList.remove('bg-blue-600','text-white'); }); }
-    function refreshMyRequestsTable() { let myReqs = requests.filter(r=>r.schoolId===currentSchoolId); let filtered = currentMyFilter==='all' ? myReqs : myReqs.filter(r=>r.status===currentMyFilter); let tbody = document.getElementById('myRequestsTable'); if(!filtered.length){tbody.innerHTML='<tr><td colspan="5" class="text-center py-8">لا توجد طلبات</td></tr>';return;} tbody.innerHTML = filtered.map(r=>`<tr><td>${r.id}</td><td>${new Date(r.date).toLocaleDateString()}</td><td>${r.items.length}</td><td><span class="badge ${r.status==='pending'?'badge-warning':r.status==='approved'?'badge-success':'badge-danger'}">${r.status==='pending'?'معلق':r.status==='approved'?'منفذ':'مرفوض'}</span></td><td><button onclick="showRequestDetails('${r.id}')" class="text-blue-600"><i class="fas fa-eye"></i></button></td></tr>`).join(''); }
-    function filterMyRequests(filter) { currentMyFilter = filter; refreshMyRequestsTable(); document.querySelectorAll('.my-filter-btn').forEach(btn=>{ if(btn.dataset.filter===filter) btn.classList.add('bg-blue-600','text-white'); else btn.classList.remove('bg-blue-600','text-white'); }); }
-    function showRequestDetails(id) { let req = requests.find(r=>r.id===id); if(!req) return; currentRequestForModal = JSON.parse(JSON.stringify(req)); document.getElementById('modalRequestNumber').innerText = req.id; document.getElementById('modalSchoolName').innerText = req.schoolName; document.getElementById('modalRequestDate').innerText = new Date(req.date).toLocaleString(); let statusSpan = document.getElementById('modalRequestStatus'); statusSpan.innerHTML = req.status==='pending'?'<span class="badge badge-warning">معلق</span>':req.status==='approved'?'<span class="badge badge-success">موافق عليه</span>':'<span class="badge badge-danger">مرفوض</span>'; let container = document.getElementById('editableRequestItems'); if(currentRole==='admin' && req.status==='pending'){ container.innerHTML = req.items.map((it,idx)=>`<div class="flex gap-4 items-center mb-3 p-2 border rounded"><span class="flex-1">${it.itemName}</span><span class="text-sm text-slate-500">المتوفر: ${items.find(i=>i.id===it.itemId)?.quantity||0}</span><input type="number" id="editReqQty_${idx}" value="${it.quantity}" class="w-24 px-2 py-1 border rounded" min="1"><span class="text-sm">الوحدة: ${items.find(i=>i.id===it.itemId)?.unit||''}</span></div>`).join(''); } else { container.innerHTML = req.items.map(it=>`<div class="flex gap-4 items-center mb-2"><span class="flex-1">${it.itemName}</span><span class="font-bold">${it.quantity}</span></div>`).join(''); } let notesDiv = document.getElementById('modalRequestNotes'); if(req.notes){ notesDiv.classList.remove('hidden'); notesDiv.querySelector('p').innerText = req.notes; } else notesDiv.classList.add('hidden'); if(currentRole==='admin'){ document.getElementById('adminActions').classList.remove('hidden'); document.getElementById('schoolActions').classList.add('hidden'); } else { document.getElementById('adminActions').classList.add('hidden'); document.getElementById('schoolActions').classList.remove('hidden'); } openModal('requestDetailsModal'); }
-    function processRequest(action) { if(!currentRequestForModal) return; let req = currentRequestForModal; if(action==='approve'){ let editedItems = []; let canApprove = true; for(let i=0; i<req.items.length; i++){ let newQty = parseInt(document.getElementById(`editReqQty_${i}`)?.value) || req.items[i].quantity; editedItems.push({...req.items[i], quantity:newQty}); } for(let it of editedItems){ let item = items.find(i=>i.id===it.itemId); if(!item || item.quantity < it.quantity){ canApprove=false; showToast(`كمية غير كافية لـ ${it.itemName}`,'error'); break; } } if(!canApprove) return; for(let it of editedItems){ let item = items.find(i=>i.id===it.itemId); item.quantity -= it.quantity; let opNumber = getNextOpNumber(); transactions.unshift({id:Date.now(), opNumber, date:new Date().toISOString(), type:'صرف لمدرسة', itemName:item.name, quantity:it.quantity, reference:`طلب ${req.id}`, user:currentUser.name}); } req.status='approved'; req.items = editedItems; addLog('request', `تمت الموافقة على الطلب ${req.id}`, `للمدرسة ${req.schoolName}`); showToast('تمت الموافقة وخصم الكميات المعدلة'); } else { req.status='rejected'; addLog('request', `تم رفض الطلب ${req.id}`, `للمدرسة ${req.schoolName}`); showToast('تم الرفض'); } let index = requests.findIndex(r=>r.id===req.id); if(index!==-1) requests[index]=req; saveData(); closeModal('requestDetailsModal'); refreshRequestsTable(); refreshMyRequestsTable(); refreshAdminDashboard(); refreshItemsSelects(); refreshTransactionsTable(); }
-    function printRequestInvoice() { if(!currentRequestForModal) return; let req = currentRequestForModal; document.getElementById('printInvoiceNumber').innerText = req.id; document.getElementById('printDate').innerText = new Date(req.date).toLocaleDateString(); document.getElementById('printSchool').innerText = req.schoolName; document.getElementById('printStatus').innerText = req.status==='approved'?'تم التنفيذ':req.status==='pending'?'معلق':'مرفوض'; let printBody = document.getElementById('printItems'); printBody.innerHTML = req.items.map((it,idx)=>`<tr><td class="p-2 border">${idx+1}</td><td class="p-2 border">${it.itemName}</td><td class="p-2 border">${it.quantity}</td><td class="p-2"></td></tr>`).join(''); let win = window.open('','_blank'); win.document.write(`<html><head><title>فاتورة ${req.id}</title><link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet"><style>body{padding:2rem;}</style></head><body dir="rtl">${document.getElementById('printInvoice').innerHTML}</body></html>`); win.document.close(); win.print(); }
+    function initNewRequest() {
+        document.getElementById('requestItemsList').innerHTML = '';
+        document.getElementById('emptyRequestItems').style.display = 'block';
+        document.getElementById('requestNumber').innerText = `REQ-${Date.now()}`;
+        document.getElementById('requestDate').innerText = new Date().toLocaleDateString('ar-EG');
+        document.getElementById('requestNotes').value = '';
+    }
+    function addRequestItem() {
+        if(items.length===0) return showToast('لا توجد أصناف','error');
+        let div = document.createElement('div');
+        div.className = 'flex gap-2 items-center bg-slate-50 p-3 rounded-lg';
+        div.innerHTML = `<select class="item-select flex-1 px-3 py-2 border rounded-lg">${items.map(i=>`<option value="${i.id}">${i.name}</option>`).join('')}</select><input type="number" class="item-qty w-24 px-2 py-2 border rounded-lg" placeholder="الكمية" min="1" value="1"><button type="button" onclick="this.parentElement.remove()" class="text-red-500"><i class="fas fa-times"></i></button>`;
+        document.getElementById('requestItemsList').appendChild(div);
+        document.getElementById('emptyRequestItems').style.display = 'none';
+    }
+    function handleNewRequest(e) {
+        e.preventDefault();
+        let itemsDivs = document.querySelectorAll('#requestItemsList > div');
+        if(itemsDivs.length===0) return showToast('أضف صنفاً','error');
+        let reqItems = [];
+        for(let div of itemsDivs){
+            let itemId = div.querySelector('.item-select').value;
+            let qty = parseInt(div.querySelector('.item-qty').value);
+            let item = items.find(i=>i.id===itemId);
+            if(item) reqItems.push({itemId,itemName:item.name,quantity:qty});
+        }
+        if(reqItems.length===0) return showToast('أصناف غير صالحة','error');
+        let requestId = 'req'+Date.now();
+        let opNumber = getNextOpNumber();
+        requests.push({id:requestId, opNumber, schoolId:currentSchoolId, schoolName:currentUser.name, date:new Date().toISOString(), items:reqItems, notes:document.getElementById('requestNotes').value, status:'pending'});
+        saveData();
+        addLog('request', `طلب جديد من ${currentUser.name}`, `${reqItems.length} صنف`);
+        showToast('تم إرسال الطلب');
+        showPage('myRequests');
+        refreshMyRequestsTable();
+        if(currentRole==='admin') refreshRequestsTable();
+    }
+    function refreshRequestsTable() {
+        let filtered = currentFilter==='all' ? requests : requests.filter(r=>r.status===currentFilter);
+        let tbody = document.getElementById('requestsTable');
+        if(!filtered.length){tbody.innerHTML='<tr><td colspan="6" class="text-center py-8">لا توجد طلبات</td></tr>';return;}
+        tbody.innerHTML = filtered.map(r=>`<tr><td>${r.id}</td><td>${r.schoolName}</td><td>${new Date(r.date).toLocaleDateString()}</td><td>${r.items.length}</td><td><span class="badge ${r.status==='pending'?'badge-warning':r.status==='approved'?'badge-success':'badge-danger'}">${r.status==='pending'?'معلق':r.status==='approved'?'موافق عليه':'مرفوض'}</span></td><td><button onclick="showRequestDetails('${r.id}')" class="text-blue-600"><i class="fas fa-eye"></i></button></td></tr>`).join('');
+        document.getElementById('requestsBadge').classList.toggle('hidden', requests.filter(r=>r.status==='pending').length===0);
+    }
+    function filterRequests(filter) {
+        currentFilter = filter;
+        refreshRequestsTable();
+        document.querySelectorAll('.filter-btn').forEach(btn=>{
+            if(btn.dataset.filter===filter) btn.classList.add('bg-blue-600','text-white');
+            else btn.classList.remove('bg-blue-600','text-white');
+        });
+    }
+    function refreshMyRequestsTable() {
+        let myReqs = requests.filter(r=>r.schoolId===currentSchoolId);
+        let filtered = currentMyFilter==='all' ? myReqs : myReqs.filter(r=>r.status===currentMyFilter);
+        let tbody = document.getElementById('myRequestsTable');
+        if(!filtered.length){tbody.innerHTML='<tr><td colspan="5" class="text-center py-8">لا توجد طلبات</td></tr>';return;}
+        tbody.innerHTML = filtered.map(r=>`<tr><td>${r.id}</td><td>${new Date(r.date).toLocaleDateString()}</td><td>${r.items.length}</td><td><span class="badge ${r.status==='pending'?'badge-warning':r.status==='approved'?'badge-success':'badge-danger'}">${r.status==='pending'?'معلق':r.status==='approved'?'منفذ':'مرفوض'}</span></td><td><button onclick="showRequestDetails('${r.id}')" class="text-blue-600"><i class="fas fa-eye"></i></button></td></tr>`).join('');
+    }
+    function filterMyRequests(filter) {
+        currentMyFilter = filter;
+        refreshMyRequestsTable();
+        document.querySelectorAll('.my-filter-btn').forEach(btn=>{
+            if(btn.dataset.filter===filter) btn.classList.add('bg-blue-600','text-white');
+            else btn.classList.remove('bg-blue-600','text-white');
+        });
+    }
+    function showRequestDetails(id) {
+        let req = requests.find(r=>r.id===id);
+        if(!req) return;
+        currentRequestForModal = JSON.parse(JSON.stringify(req));
+        document.getElementById('modalRequestNumber').innerText = req.id;
+        document.getElementById('modalSchoolName').innerText = req.schoolName;
+        document.getElementById('modalRequestDate').innerText = new Date(req.date).toLocaleString();
+        let statusSpan = document.getElementById('modalRequestStatus');
+        statusSpan.innerHTML = req.status==='pending'?'<span class="badge badge-warning">معلق</span>':req.status==='approved'?'<span class="badge badge-success">موافق عليه</span>':'<span class="badge badge-danger">مرفوض</span>';
+        let container = document.getElementById('editableRequestItems');
+        if(currentRole==='admin' && req.status==='pending'){
+            container.innerHTML = req.items.map((it,idx)=>`<div class="flex gap-4 items-center mb-3 p-2 border rounded"><span class="flex-1">${it.itemName}</span><span class="text-sm text-slate-500">المتوفر: ${items.find(i=>i.id===it.itemId)?.quantity||0}</span><input type="number" id="editReqQty_${idx}" value="${it.quantity}" class="w-24 px-2 py-1 border rounded" min="1"><span class="text-sm">الوحدة: ${items.find(i=>i.id===it.itemId)?.unit||''}</span></div>`).join('');
+        } else {
+            container.innerHTML = req.items.map(it=>`<div class="flex gap-4 items-center mb-2"><span class="flex-1">${it.itemName}</span><span class="font-bold">${it.quantity}</span></div>`).join('');
+        }
+        let notesDiv = document.getElementById('modalRequestNotes');
+        if(req.notes){
+            notesDiv.classList.remove('hidden');
+            notesDiv.querySelector('p').innerText = req.notes;
+        } else notesDiv.classList.add('hidden');
+        if(currentRole==='admin'){
+            document.getElementById('adminActions').classList.remove('hidden');
+            document.getElementById('schoolActions').classList.add('hidden');
+        } else {
+            document.getElementById('adminActions').classList.add('hidden');
+            document.getElementById('schoolActions').classList.remove('hidden');
+        }
+        openModal('requestDetailsModal');
+    }
+    function processRequest(action) {
+        if(!currentRequestForModal) return;
+        let req = currentRequestForModal;
+        if(action==='approve'){
+            let editedItems = [];
+            let canApprove = true;
+            for(let i=0; i<req.items.length; i++){
+                let newQty = parseInt(document.getElementById(`editReqQty_${i}`)?.value) || req.items[i].quantity;
+                editedItems.push({...req.items[i], quantity:newQty});
+            }
+            for(let it of editedItems){
+                let item = items.find(i=>i.id===it.itemId);
+                if(!item || item.quantity < it.quantity){
+                    canApprove=false;
+                    showToast(`كمية غير كافية لـ ${it.itemName}`,'error');
+                    break;
+                }
+            }
+            if(!canApprove) return;
+            for(let it of editedItems){
+                let item = items.find(i=>i.id===it.itemId);
+                item.quantity -= it.quantity;
+                let opNumber = getNextOpNumber();
+                transactions.unshift({id:Date.now(), opNumber, date:new Date().toISOString(), type:'صرف لمدرسة', itemName:item.name, quantity:it.quantity, reference:`طلب ${req.id}`, user:currentUser.name});
+            }
+            req.status='approved';
+            req.items = editedItems;
+            addLog('request', `تمت الموافقة على الطلب ${req.id}`, `للمدرسة ${req.schoolName}`);
+            showToast('تمت الموافقة وخصم الكميات المعدلة');
+        } else {
+            req.status='rejected';
+            addLog('request', `تم رفض الطلب ${req.id}`, `للمدرسة ${req.schoolName}`);
+            showToast('تم الرفض');
+        }
+        let index = requests.findIndex(r=>r.id===req.id);
+        if(index!==-1) requests[index]=req;
+        saveData();
+        closeModal('requestDetailsModal');
+        refreshRequestsTable();
+        refreshMyRequestsTable();
+        refreshAdminDashboard();
+        refreshItemsSelects();
+        refreshTransactionsTable();
+    }
+    function printRequestInvoice() {
+        if(!currentRequestForModal) return;
+        let req = currentRequestForModal;
+        document.getElementById('printInvoiceNumber').innerText = req.id;
+        document.getElementById('printDate').innerText = new Date(req.date).toLocaleDateString();
+        document.getElementById('printSchool').innerText = req.schoolName;
+        document.getElementById('printStatus').innerText = req.status==='approved'?'تم التنفيذ':req.status==='pending'?'معلق':'مرفوض';
+        let printBody = document.getElementById('printItems');
+        printBody.innerHTML = req.items.map((it,idx)=>`<tr><td class="p-2 border">${idx+1}</td><td class="p-2 border">${it.itemName}</td><td class="p-2 border">${it.quantity}</td><td class="p-2"></td></tr>`).join('');
+        let win = window.open('','_blank');
+        win.document.write(`<html><head><title>فاتورة ${req.id}</title><link href="https://cdn.jsdelivr.net/npm/tailwindcss@2/dist/tailwind.min.css" rel="stylesheet"><style>body{padding:2rem;}</style></head><body dir="rtl">${document.getElementById('printInvoice').innerHTML}</body></html>`);
+        win.document.close();
+        win.print();
+    }
 
-    // ==================== MESSAGES (Communication with reply) ====================
-    function sendMessageToAdmin() { let subject = document.getElementById('contactSubject').value, message = document.getElementById('contactMessage').value; if(!subject || !message) return showToast('الموضوع والرسالة مطلوبان','error'); let opNumber = getNextOpNumber(); messages.push({ id: Date.now(), opNumber, fromSchoolId: currentSchoolId, fromSchoolName: currentUser.name, subject, message, date: new Date().toISOString(), read: false, reply: null }); saveData(); addLog('message', `رسالة من ${currentUser.name}`, subject); showToast('تم إرسال رسالتك إلى المدير'); closeModal('contactModal'); document.getElementById('contactSubject').value = ''; document.getElementById('contactMessage').value = ''; if(currentRole==='admin') refreshMessagesTable(); else refreshMyMessagesTable(); }
-    function refreshMessagesTable() { let tbody = document.getElementById('messagesTable'); if(!messages.length){tbody.innerHTML='<td><td colspan="7" class="text-center py-8">لا توجد رسائل</td></tr>';return;} tbody.innerHTML = messages.map(m=>`<tr><td>${m.opNumber || '-'}</td><td>${m.fromSchoolName}</td><td>${new Date(m.date).toLocaleString()}</td><td>${m.subject}</td><td>${m.message}</td><td>${m.reply ? `<span class="text-green-600">${m.reply}</span>` : '<span class="text-slate-400">لم يتم الرد بعد</span>'}</td><td><button onclick="openReplyModal(${m.id})" class="text-blue-600 ml-2"><i class="fas fa-reply"></i> رد</button><button onclick="deleteMessage(${m.id})" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join(''); let unread = messages.filter(m=>!m.read).length; document.getElementById('messagesBadge').classList.toggle('hidden', unread===0); if(unread>0) document.getElementById('messagesBadge').innerText = unread; }
-    function openReplyModal(messageId) { currentReplyMessageId = messageId; document.getElementById('replyText').value = ''; openModal('replyModal'); }
-    function sendReply() { let replyText = document.getElementById('replyText').value; if(!replyText) return showToast('الرد مطلوب','error'); let msg = messages.find(m=>m.id===currentReplyMessageId); if(msg){ msg.reply = replyText; msg.read = true; saveData(); addLog('message', `رد المدير على رسالة من ${msg.fromSchoolName}`, msg.subject); showToast('تم إرسال الرد'); closeModal('replyModal'); refreshMessagesTable(); if(currentRole==='school') refreshMyMessagesTable(); } }
-    function deleteMessage(id) { messages = messages.filter(m=>m.id!=id); saveData(); refreshMessagesTable(); showToast('تم حذف الرسالة'); }
-    function refreshMyMessagesTable() { let myMsgs = messages.filter(m=>m.fromSchoolId===currentSchoolId); let tbody = document.getElementById('myMessagesTable'); if(!myMsgs.length){tbody.innerHTML='<td><td colspan="5" class="text-center py-8">لا توجد رسائل</td></tr>';return;} tbody.innerHTML = myMsgs.map(m=>`<tr><td>${m.opNumber || '-'}</td><td>${new Date(m.date).toLocaleString()}</td><td>${m.subject}</td><td>${m.message}</td><td>${m.reply ? m.reply : '<span class="text-slate-400">لم يتم الرد بعد</span>'}</td></tr>`).join(''); }
+    // ==================== MESSAGES ====================
+    function sendMessageToAdmin() {
+        let subject = document.getElementById('contactSubject').value, message = document.getElementById('contactMessage').value;
+        if(!subject || !message) return showToast('الموضوع والرسالة مطلوبان','error');
+        let opNumber = getNextOpNumber();
+        messages.push({ id: Date.now(), opNumber, fromSchoolId: currentSchoolId, fromSchoolName: currentUser.name, subject, message, date: new Date().toISOString(), read: false, reply: null });
+        saveData();
+        addLog('message', `رسالة من ${currentUser.name}`, subject);
+        showToast('تم إرسال رسالتك إلى المدير');
+        closeModal('contactModal');
+        document.getElementById('contactSubject').value = '';
+        document.getElementById('contactMessage').value = '';
+        if(currentRole==='admin') refreshMessagesTable();
+        else refreshMyMessagesTable();
+    }
+    function refreshMessagesTable() {
+        let tbody = document.getElementById('messagesTable');
+        if(!messages.length){tbody.innerHTML='<tr><td colspan="7" class="text-center py-8">لا توجد رسائل</td></tr>';return;}
+        tbody.innerHTML = messages.map(m=>`<tr><td>${m.opNumber || '-'}</td><td>${m.fromSchoolName}</td><td>${new Date(m.date).toLocaleString()}</td><td>${m.subject}</td><td>${m.message}</td><td>${m.reply ? `<span class="text-green-600">${m.reply}</span>` : '<span class="text-slate-400">لم يتم الرد بعد</span>'}</td><td><button onclick="openReplyModal(${m.id})" class="text-blue-600 ml-2"><i class="fas fa-reply"></i> رد</button><button onclick="deleteMessage(${m.id})" class="text-red-500"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        let unread = messages.filter(m=>!m.read).length;
+        document.getElementById('messagesBadge').classList.toggle('hidden', unread===0);
+        if(unread>0) document.getElementById('messagesBadge').innerText = unread;
+    }
+    function openReplyModal(messageId) {
+        currentReplyMessageId = messageId;
+        document.getElementById('replyText').value = '';
+        openModal('replyModal');
+    }
+    function sendReply() {
+        let replyText = document.getElementById('replyText').value;
+        if(!replyText) return showToast('الرد مطلوب','error');
+        let msg = messages.find(m=>m.id===currentReplyMessageId);
+        if(msg){
+            msg.reply = replyText;
+            msg.read = true;
+            saveData();
+            addLog('message', `رد المدير على رسالة من ${msg.fromSchoolName}`, msg.subject);
+            showToast('تم إرسال الرد');
+            closeModal('replyModal');
+            refreshMessagesTable();
+            if(currentRole==='school') refreshMyMessagesTable();
+        }
+    }
+    function deleteMessage(id) {
+        messages = messages.filter(m=>m.id!=id);
+        saveData();
+        refreshMessagesTable();
+        showToast('تم حذف الرسالة');
+    }
+    function refreshMyMessagesTable() {
+        let myMsgs = messages.filter(m=>m.fromSchoolId===currentSchoolId);
+        let tbody = document.getElementById('myMessagesTable');
+        if(!myMsgs.length){tbody.innerHTML='<tr><td colspan="5" class="text-center py-8">لا توجد رسائل</td></tr>';return;}
+        tbody.innerHTML = myMsgs.map(m=>`<tr><td>${m.opNumber || '-'}</td><td>${new Date(m.date).toLocaleString()}</td><td>${m.subject}</td><td>${m.message}</td><td>${m.reply ? m.reply : '<span class="text-slate-400">لم يتم الرد بعد</span>'}</td></tr>`).join('');
+    }
 
-    // ==================== LOGS with pagination and print per row ====================
-    function refreshLogs() { let filtered = logs.slice(); let from = document.getElementById('logDateFrom').value, to = document.getElementById('logDateTo').value, type = document.getElementById('logType').value; if(from) filtered = filtered.filter(l=>new Date(l.timestamp)>=new Date(from)); if(to) filtered = filtered.filter(l=>new Date(l.timestamp)<=new Date(to)); if(type) filtered = filtered.filter(l=>l.type===type); let totalPages = Math.ceil(filtered.length / logsPerPage); let start = (logsCurrentPage-1)*logsPerPage; let pageLogs = filtered.slice(start, start+logsPerPage); let tbody = document.getElementById('logsTable'); if(!pageLogs.length){tbody.innerHTML='<tr><td colspan="7" class="text-center py-8">لا توجد سجلات</td></tr>';} else { tbody.innerHTML = pageLogs.map(l=>`<tr><td>${l.opNumber}</td><td>${new Date(l.timestamp).toLocaleString()}</td><td>${l.user}</td><td>${l.type}</td><td>${l.description}</td><td>${l.details}</td><td><button onclick="printSingleLog(${l.id})" class="text-blue-600"><i class="fas fa-print"></i> طباعة</button></td></tr>`).join(''); } let paginationDiv = document.getElementById('logsPagination'); if(totalPages<=1) paginationDiv.innerHTML = ''; else { let btns = ''; for(let i=1;i<=totalPages;i++){ btns += `<button class="${i===logsCurrentPage?'active':''}" onclick="goToLogsPage(${i})">${i}</button>`; } paginationDiv.innerHTML = btns; } }
+    // ==================== LOGS ====================
+    function refreshLogs() {
+        let filtered = logs.slice();
+        let from = document.getElementById('logDateFrom').value, to = document.getElementById('logDateTo').value, type = document.getElementById('logType').value;
+        if(from) filtered = filtered.filter(l=>new Date(l.timestamp)>=new Date(from));
+        if(to) filtered = filtered.filter(l=>new Date(l.timestamp)<=new Date(to));
+        if(type) filtered = filtered.filter(l=>l.type===type);
+        let totalPages = Math.ceil(filtered.length / logsPerPage);
+        let start = (logsCurrentPage-1)*logsPerPage;
+        let pageLogs = filtered.slice(start, start+logsPerPage);
+        let tbody = document.getElementById('logsTable');
+        if(!pageLogs.length){tbody.innerHTML='<tr><td colspan="7" class="text-center py-8">لا توجد سجلات</td></tr>';}
+        else {
+            tbody.innerHTML = pageLogs.map(l=>`<tr><td>${l.opNumber}</td><td>${new Date(l.timestamp).toLocaleString()}</td><td>${l.user}</td><td>${l.type}</td><td>${l.description}</td><td>${l.details}</td><td><button onclick="printSingleLog(${l.id})" class="text-blue-600"><i class="fas fa-print"></i> طباعة</button></td></tr>`).join('');
+        }
+        let paginationDiv = document.getElementById('logsPagination');
+        if(totalPages<=1) paginationDiv.innerHTML = '';
+        else {
+            let btns = '';
+            for(let i=1;i<=totalPages;i++){
+                btns += `<button class="${i===logsCurrentPage?'active':''}" onclick="goToLogsPage(${i})">${i}</button>`;
+            }
+            paginationDiv.innerHTML = btns;
+        }
+    }
     function goToLogsPage(page) { logsCurrentPage = page; refreshLogs(); }
-    function printSingleLog(logId) { let log = logs.find(l=>l.id===logId); if(!log) return; let win = window.open('','_blank'); win.document.write(`<html><head><title>تفاصيل العملية</title><style>body{font-family:sans-serif;padding:2rem;}</style></head><body dir="rtl"><h2>تفاصيل العملية</h2><p><strong>رقم العملية:</strong> ${log.opNumber}</p><p><strong>التاريخ:</strong> ${new Date(log.timestamp).toLocaleString()}</p><p><strong>المستخدم:</strong> ${log.user}</p><p><strong>النوع:</strong> ${log.type}</p><p><strong>الوصف:</strong> ${log.description}</p><p><strong>التفاصيل:</strong> ${log.details}</p></body></html>`); win.document.close(); win.print(); }
-    function searchOperationByNumber() { let number = document.getElementById('searchOperationNumber').value.trim(); if(!number) return showToast('أدخل رقم العملية','error'); let found = logs.filter(l=>l.opNumber === number); if(found.length===0){ let req = requests.find(r=>r.id===number); if(req) found.push({type:'طلب', opNumber: req.opNumber || number, date:req.date, details:`طلب من ${req.schoolName} - ${req.items.length} أصناف - الحالة: ${req.status}`, user:req.schoolName}); let trans = transactions.filter(t=>t.opNumber === number); trans.forEach(t=>found.push({type:'حركة مخزون', opNumber: t.opNumber, date:t.date, details:`${t.type} - ${t.itemName} ${t.quantity} - المرجع: ${t.reference}`, user:t.user})); } if(found.length===0){ showToast('لم يتم العثور على عملية بهذا الرقم','error'); return; } let tbody = document.getElementById('logsTable'); tbody.innerHTML = found.map(f=>`<tr><td>${f.opNumber}</td><td>${new Date(f.date).toLocaleString()}</td><td>${f.user || '-'}</td><td>${f.type || 'عملية'}</td><td colspan="2">${f.details}</td><td><button onclick="printSearchResultItem('${f.opNumber}')" class="text-blue-600"><i class="fas fa-print"></i> طباعة</button></td></tr>`).join(''); lastSearchResult = found; document.getElementById('logsPagination').innerHTML = ''; }
-    function printOperationResult() { if(!lastSearchResult || lastSearchResult.length===0) return showToast('لا توجد نتيجة للطباعة','error'); let win = window.open('','_blank'); win.document.write(`<html><head><title>نتيجة البحث</title><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #000;padding:8px;text-align:right}</style></head><body dir="rtl"><h1>نتيجة البحث</h1><table><th>رقم العملية</th><th>التاريخ</th><th>المستخدم</th><th>النوع</th><th>التفاصيل</th></tr>${lastSearchResult.map(f=>`<tr><td>${f.opNumber}</td><td>${new Date(f.date).toLocaleString()}</td><td>${f.user || '-'}</td><td>${f.type || 'عملية'}</td><td>${f.details}</td></tr>`).join('')}</table></body></html>`); win.document.close(); win.print(); }
-    function printSearchResultItem(opNumber) { let item = lastSearchResult?.find(f=>f.opNumber===opNumber); if(!item) return; let win = window.open('','_blank'); win.document.write(`<html><head><title>تفاصيل العملية</title><style>body{font-family:sans-serif;padding:2rem;}</style></head><body dir="rtl"><h2>تفاصيل العملية</h2><p><strong>رقم العملية:</strong> ${item.opNumber}</p><p><strong>التاريخ:</strong> ${new Date(item.date).toLocaleString()}</p><p><strong>المستخدم:</strong> ${item.user || '-'}</p><p><strong>النوع:</strong> ${item.type || 'عملية'}</p><p><strong>التفاصيل:</strong> ${item.details}</p></body></html>`); win.document.close(); win.print(); }
-    function clearOldLogs() { if(confirm('حذف السجلات الأقدم من شهر؟')){ let monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth()-1); logs = logs.filter(l=>new Date(l.timestamp)>monthAgo); saveData(); refreshLogs(); showToast('تم الحذف'); } }
-    function exportLogsToExcel() { let ws = XLSX.utils.json_to_sheet(logs.map(l=>({رقم_العملية:l.opNumber, التاريخ:new Date(l.timestamp).toLocaleString(), المستخدم:l.user, النوع:l.type, الوصف:l.description, التفاصيل:l.details}))); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'السجلات'); XLSX.writeFile(wb,`سجل_العمليات_${new Date().toISOString().slice(0,10)}.xlsx`); }
+    function printSingleLog(logId) {
+        let log = logs.find(l=>l.id===logId);
+        if(!log) return;
+        let win = window.open('','_blank');
+        win.document.write(`<html><head><title>تفاصيل العملية</title><style>body{font-family:sans-serif;padding:2rem;}</style></head><body dir="rtl"><h2>تفاصيل العملية</h2><p><strong>رقم العملية:</strong> ${log.opNumber}</p><p><strong>التاريخ:</strong> ${new Date(log.timestamp).toLocaleString()}</p><p><strong>المستخدم:</strong> ${log.user}</p><p><strong>النوع:</strong> ${log.type}</p><p><strong>الوصف:</strong> ${log.description}</p><p><strong>التفاصيل:</strong> ${log.details}</p></body></html>`);
+        win.document.close();
+        win.print();
+    }
+    function searchOperationByNumber() {
+        let number = document.getElementById('searchOperationNumber').value.trim();
+        if(!number) return showToast('أدخل رقم العملية','error');
+        let found = logs.filter(l=>l.opNumber === number);
+        if(found.length===0){
+            let req = requests.find(r=>r.id===number);
+            if(req) found.push({type:'طلب', opNumber: req.opNumber || number, date:req.date, details:`طلب من ${req.schoolName} - ${req.items.length} أصناف - الحالة: ${req.status}`, user:req.schoolName});
+            let trans = transactions.filter(t=>t.opNumber === number);
+            trans.forEach(t=>found.push({type:'حركة مخزون', opNumber: t.opNumber, date:t.date, details:`${t.type} - ${t.itemName} ${t.quantity} - المرجع: ${t.reference}`, user:t.user}));
+        }
+        if(found.length===0){
+            showToast('لم يتم العثور على عملية بهذا الرقم','error');
+            return;
+        }
+        let tbody = document.getElementById('logsTable');
+        tbody.innerHTML = found.map(f=>`<tr><td>${f.opNumber}</td><td>${new Date(f.date).toLocaleString()}</td><td>${f.user || '-'}</td><td>${f.type || 'عملية'}</td><td colspan="2">${f.details}</td><td><button onclick="printSearchResultItem('${f.opNumber}')" class="text-blue-600"><i class="fas fa-print"></i> طباعة</button></td></tr>`).join('');
+        lastSearchResult = found;
+        document.getElementById('logsPagination').innerHTML = '';
+    }
+    function printOperationResult() {
+        if(!lastSearchResult || lastSearchResult.length===0) return showToast('لا توجد نتيجة للطباعة','error');
+        let win = window.open('','_blank');
+        win.document.write(`<html><head><title>نتيجة البحث</title><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #000;padding:8px;text-align:right}</style></head><body dir="rtl"><h1>نتيجة البحث</h1><table><tr><th>رقم العملية</th><th>التاريخ</th><th>المستخدم</th><th>النوع</th><th>التفاصيل</th></tr>${lastSearchResult.map(f=>`<tr><td>${f.opNumber}</td><td>${new Date(f.date).toLocaleString()}</td><td>${f.user || '-'}</td><td>${f.type || 'عملية'}</td><td>${f.details}</td></tr>`).join('')}</table></body></html>`);
+        win.document.close();
+        win.print();
+    }
+    function printSearchResultItem(opNumber) {
+        let item = lastSearchResult?.find(f=>f.opNumber===opNumber);
+        if(!item) return;
+        let win = window.open('','_blank');
+        win.document.write(`<html><head><title>تفاصيل العملية</title><style>body{font-family:sans-serif;padding:2rem;}</style></head><body dir="rtl"><h2>تفاصيل العملية</h2><p><strong>رقم العملية:</strong> ${item.opNumber}</p><p><strong>التاريخ:</strong> ${new Date(item.date).toLocaleString()}</p><p><strong>المستخدم:</strong> ${item.user || '-'}</p><p><strong>النوع:</strong> ${item.type || 'عملية'}</p><p><strong>التفاصيل:</strong> ${item.details}</p></body></html>`);
+        win.document.close();
+        win.print();
+    }
+    function clearOldLogs() {
+        if(confirm('حذف السجلات الأقدم من شهر؟')){
+            let monthAgo = new Date();
+            monthAgo.setMonth(monthAgo.getMonth()-1);
+            logs = logs.filter(l=>new Date(l.timestamp)>monthAgo);
+            saveData();
+            refreshLogs();
+            showToast('تم الحذف');
+        }
+    }
+    function exportLogsToExcel() {
+        let ws = XLSX.utils.json_to_sheet(logs.map(l=>({رقم_العملية:l.opNumber, التاريخ:new Date(l.timestamp).toLocaleString(), المستخدم:l.user, النوع:l.type, الوصف:l.description, التفاصيل:l.details})));
+        let wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,'السجلات');
+        XLSX.writeFile(wb,`سجل_العمليات_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
 
     // ==================== DASHBOARD & REPORTS ====================
-    async function refreshAdminDashboard() { document.getElementById('totalItems').innerText = items.length; document.getElementById('totalSchools').innerText = schools.length; document.getElementById('pendingRequests').innerText = requests.filter(r=>r.status==='pending').length; document.getElementById('totalTransactions').innerText = transactions.length; let low = items.filter(i=>i.quantity<=i.minQty); let alertDiv = document.getElementById('lowStockAlert'); if(low.length===0) alertDiv.innerHTML='<p class="text-center py-8">جميع الأصناف متوفرة</p>'; else alertDiv.innerHTML = low.map(i=>`<div class="flex justify-between p-2 bg-red-50 rounded"><span>${i.name}</span><span>${i.quantity}/${i.minQty}</span></div>`).join(''); let recent = logs.slice(0,5); let logsBody = document.getElementById('recentLogs'); if(!recent.length) logsBody.innerHTML='<td><td colspan="4" class="text-center py-8">لا توجد عمليات حديثة</td></tr>'; else logsBody.innerHTML = recent.map(l=>`<tr><td class="px-4 py-2">${l.opNumber}</td><td class="px-4 py-2">${l.description}</td><td class="px-4 py-2">${l.user}</td><td class="px-4 py-2">${new Date(l.timestamp).toLocaleString()}</td></tr>`).join(''); }
-    function generateInventoryReport(type) { let data = items.map(i=>({رقم_الصنف:i.id, الصنف:i.name, الفئة:categories.find(c=>c.id===i.categoryId)?.name||'', الكمية:i.quantity, الحد_الأدنى:i.minQty, الوحدة:i.unit})); if(type==='excel'){ let ws=XLSX.utils.json_to_sheet(data); let wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'المخزون'); XLSX.writeFile(wb,`تقرير_المخزون_${new Date().toISOString().slice(0,10)}.xlsx`); } else { let win=window.open('','_blank'); win.document.write(`<html><head><title>تقرير المخزون</title><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #000;padding:8px;text-align:right}</style></head><body dir="rtl"><h1>تقرير المخزون</h1><tr><th>الصنف</th><th>الفئة</th><th>الكمية</th><th>الحد الأدنى</th></tr>${data.map(d=>`<tr><td>${d.الصنف}</td><td>${d.الفئة}</td><td>${d.الكمية}</td><td>${d.الحد_الأدنى}</td></tr>`).join('')}</table></body></html>`); win.document.close(); win.print(); } }
-    function generateTransactionsReport(type) { let data = transactions.map(t=>({رقم_العملية:t.opNumber, التاريخ:new Date(t.date).toLocaleString(), النوع:t.type, الصنف:t.itemName, الكمية:t.quantity, المرجع:t.reference, المستخدم:t.user})); if(type==='excel'){ let ws=XLSX.utils.json_to_sheet(data); let wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'الحركات'); XLSX.writeFile(wb,`تقرير_الحركات_${new Date().toISOString().slice(0,10)}.xlsx`); } else { let win=window.open('','_blank'); win.document.write(`<html><head><title>تقرير الحركات</title><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #000;padding:8px;text-align:right}</style></head><body dir="rtl"><h1>تقرير حركات المخزون</h1><tr><th>رقم العملية</th><th>التاريخ</th><th>النوع</th><th>الصنف</th><th>الكمية</th><th>المرجع</th></tr>${data.map(d=>`<tr><td>${d.رقم_العملية}</td><td>${d.التاريخ}</td><td>${d.النوع}</td><td>${d.الصنف}</td><td>${d.الكمية}</td><td>${d.المرجع}</td></tr>`).join('')}</table></body></html>`); win.document.close(); win.print(); } }
-    function createFullBackup() { let backup = {categories,items,schools,requests,transactions,logs,messages,lastOpNumber,backupDate:new Date().toISOString()}; let dataStr = JSON.stringify(backup,null,2); let blob = new Blob([dataStr],{type:'application/json'}); let url = URL.createObjectURL(blob); let a = document.createElement('a'); a.href = url; a.download = `backup_warehouse_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(url); addLog('backup','تم إنشاء نسخة احتياطية'); showToast('تم تحميل النسخة'); }
-    function previewRestoreFile(input) { let file = input.files[0]; if(!file) return; let reader = new FileReader(); reader.onload = function(e) { try { let data = JSON.parse(e.target.result); document.getElementById('restorePreview').innerHTML = `<p><strong>تاريخ النسخة:</strong> ${data.backupDate||'غير معروف'}</p><p><strong>المحتوى:</strong> ${Object.keys(data).join(', ')}</p>`; document.getElementById('restorePreview').classList.remove('hidden'); document.getElementById('restoreBtn').disabled = false; document.getElementById('restoreBtn').dataset.backup = e.target.result; } catch(err){ showToast('ملف غير صالح','error'); } }; reader.readAsText(file); }
-    function restoreBackup() { let backupData = document.getElementById('restoreBtn').dataset.backup; if(!backupData) return; if(confirm('استعادة النسخة تحل محل البيانات الحالية؟')){ let data = JSON.parse(backupData); categories = data.categories || []; items = data.items || []; schools = data.schools || []; requests = data.requests || []; transactions = data.transactions || []; logs = data.logs || []; messages = data.messages || []; lastOpNumber = data.lastOpNumber || 0; saveData(); location.reload(); } }
+    async function refreshAdminDashboard() {
+        document.getElementById('totalItems').innerText = items.length;
+        document.getElementById('totalSchools').innerText = schools.length;
+        document.getElementById('pendingRequests').innerText = requests.filter(r=>r.status==='pending').length;
+        document.getElementById('totalTransactions').innerText = transactions.length;
+        let low = items.filter(i=>i.quantity<=i.minQty);
+        let alertDiv = document.getElementById('lowStockAlert');
+        if(low.length===0) alertDiv.innerHTML='<p class="text-center py-8">جميع الأصناف متوفرة</p>';
+        else alertDiv.innerHTML = low.map(i=>`<div class="flex justify-between p-2 bg-red-50 rounded"><span>${i.name}</span><span>${i.quantity}/${i.minQty}</span></div>`).join('');
+        let recent = logs.slice(0,5);
+        let logsBody = document.getElementById('recentLogs');
+        if(!recent.length) logsBody.innerHTML='<tr><td colspan="4" class="text-center py-8">لا توجد عمليات حديثة</td></tr>';
+        else logsBody.innerHTML = recent.map(l=>`<tr><td class="px-4 py-2">${l.opNumber}</td><td class="px-4 py-2">${l.description}</td><td class="px-4 py-2">${l.user}</td><td class="px-4 py-2">${new Date(l.timestamp).toLocaleString()}</td></tr>`).join('');
+    }
+    function generateInventoryReport(type) {
+        let data = items.map(i=>({رقم_الصنف:i.id, الصنف:i.name, الفئة:categories.find(c=>c.id===i.categoryId)?.name||'', الكمية:i.quantity, الحد_الأدنى:i.minQty, الوحدة:i.unit}));
+        if(type==='excel'){
+            let ws=XLSX.utils.json_to_sheet(data);
+            let wb=XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb,ws,'المخزون');
+            XLSX.writeFile(wb,`تقرير_المخزون_${new Date().toISOString().slice(0,10)}.xlsx`);
+        } else {
+            let win=window.open('','_blank');
+            win.document.write(`<html><head><title>تقرير المخزون</title><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #000;padding:8px;text-align:right}</style></head><body dir="rtl"><h1>تقرير المخزون</h1><table><tr><th>الصنف</th><th>الفئة</th><th>الكمية</th><th>الحد الأدنى</th></tr>${data.map(d=>`<tr><td>${d.الصنف}</td><td>${d.الفئة}</td><td>${d.الكمية}</td><td>${d.الحد_الأدنى}</td></tr>`).join('')}</table></body></html>`);
+            win.document.close();
+            win.print();
+        }
+    }
+    function generateTransactionsReport(type) {
+        let data = transactions.map(t=>({رقم_العملية:t.opNumber, التاريخ:new Date(t.date).toLocaleString(), النوع:t.type, الصنف:t.itemName, الكمية:t.quantity, المرجع:t.reference, المستخدم:t.user}));
+        if(type==='excel'){
+            let ws=XLSX.utils.json_to_sheet(data);
+            let wb=XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb,ws,'الحركات');
+            XLSX.writeFile(wb,`تقرير_الحركات_${new Date().toISOString().slice(0,10)}.xlsx`);
+        } else {
+            let win=window.open('','_blank');
+            win.document.write(`<html><head><title>تقرير الحركات</title><style>table{border-collapse:collapse;width:100%}th,td{border:1px solid #000;padding:8px;text-align:right}</style></head><body dir="rtl"><h1>تقرير حركات المخزون</h1><table><tr><th>رقم العملية</th><th>التاريخ</th><th>النوع</th><th>الصنف</th><th>الكمية</th><th>المرجع</th></tr>${data.map(d=>`<tr><td>${d.رقم_العملية}</td><td>${d.التاريخ}</td><td>${d.النوع}</td><td>${d.الصنف}</td><td>${d.الكمية}</td><td>${d.المرجع}</td></tr>`).join('')}</table></body></html>`);
+            win.document.close();
+            win.print();
+        }
+    }
+    function createFullBackup() {
+        let backup = {categories,items,schools,requests,transactions,logs,messages,lastOpNumber,backupDate:new Date().toISOString()};
+        let dataStr = JSON.stringify(backup,null,2);
+        let blob = new Blob([dataStr],{type:'application/json'});
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_warehouse_${new Date().toISOString().slice(0,19)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        addLog('backup','تم إنشاء نسخة احتياطية');
+        showToast('تم تحميل النسخة');
+    }
+    function previewRestoreFile(input) {
+        let file = input.files[0];
+        if(!file) return;
+        let reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                let data = JSON.parse(e.target.result);
+                document.getElementById('restorePreview').innerHTML = `<p><strong>تاريخ النسخة:</strong> ${data.backupDate||'غير معروف'}</p><p><strong>المحتوى:</strong> ${Object.keys(data).join(', ')}</p>`;
+                document.getElementById('restorePreview').classList.remove('hidden');
+                document.getElementById('restoreBtn').disabled = false;
+                document.getElementById('restoreBtn').dataset.backup = e.target.result;
+            } catch(err){
+                showToast('ملف غير صالح','error');
+            }
+        };
+        reader.readAsText(file);
+    }
+    function restoreBackup() {
+        let backupData = document.getElementById('restoreBtn').dataset.backup;
+        if(!backupData) return;
+        if(confirm('استعادة النسخة تحل محل البيانات الحالية؟')){
+            let data = JSON.parse(backupData);
+            categories = data.categories || [];
+            items = data.items || [];
+            schools = data.schools || [];
+            requests = data.requests || [];
+            transactions = data.transactions || [];
+            logs = data.logs || [];
+            messages = data.messages || [];
+            lastOpNumber = data.lastOpNumber || 0;
+            saveData();
+            location.reload();
+        }
+    }
 
     // ==================== SCHOOL DASHBOARD ====================
-    async function refreshSchoolDashboard() { let myReqs = requests.filter(r=>r.schoolId===currentSchoolId); document.getElementById('schoolTotalRequests').innerText = myReqs.length; document.getElementById('schoolPendingRequests').innerText = myReqs.filter(r=>r.status==='pending').length; document.getElementById('schoolCompletedRequests').innerText = myReqs.filter(r=>r.status==='approved').length; document.getElementById('schoolNameDisplay').innerHTML = `مرحباً ${currentUser.name}`; let recent = myReqs.slice(-5).reverse(); let tbody = document.getElementById('schoolRecentRequests'); if(!recent.length) tbody.innerHTML='<tr><td colspan="5" class="text-center py-8">لا توجد طلبات</td></tr>'; else tbody.innerHTML = recent.map(r=>`<tr><td>${r.id}</td><td>${new Date(r.date).toLocaleDateString()}</td><td>${r.items.length}</td><td><span class="badge ${r.status==='pending'?'badge-warning':r.status==='approved'?'badge-success':'badge-danger'}">${r.status==='pending'?'معلق':r.status==='approved'?'منفذ':'مرفوض'}</span></td><td><button onclick="showRequestDetails('${r.id}')" class="text-blue-600"><i class="fas fa-eye"></i></button></td></tr>`).join(''); }
-    function showNotifications() { let pending = requests.filter(r=>r.status==='pending').length; if(pending) showToast(`لديك ${pending} طلب معلق`,'info'); else showToast('لا توجد إشعارات','info'); }
+    async function refreshSchoolDashboard() {
+        let myReqs = requests.filter(r=>r.schoolId===currentSchoolId);
+        document.getElementById('schoolTotalRequests').innerText = myReqs.length;
+        document.getElementById('schoolPendingRequests').innerText = myReqs.filter(r=>r.status==='pending').length;
+        document.getElementById('schoolCompletedRequests').innerText = myReqs.filter(r=>r.status==='approved').length;
+        document.getElementById('schoolNameDisplay').innerHTML = `مرحباً ${currentUser.name}`;
+        let recent = myReqs.slice(-5).reverse();
+        let tbody = document.getElementById('schoolRecentRequests');
+        if(!recent.length) tbody.innerHTML='<tr><td colspan="5" class="text-center py-8">لا توجد طلبات سابقة</td></tr>';
+        else tbody.innerHTML = recent.map(r=>`<tr><td>${r.id}</td><td>${new Date(r.date).toLocaleDateString()}</td><td>${r.items.length}</td><td><span class="badge ${r.status==='pending'?'badge-warning':r.status==='approved'?'badge-success':'badge-danger'}">${r.status==='pending'?'معلق':r.status==='approved'?'منفذ':'مرفوض'}</span></td><td><button onclick="showRequestDetails('${r.id}')" class="text-blue-600"><i class="fas fa-eye"></i></button></td></tr>`).join('');
+    }
+    function showNotifications() {
+        let pending = requests.filter(r=>r.status==='pending').length;
+        if(pending) showToast(`لديك ${pending} طلب معلق`,'info');
+        else showToast('لا توجد إشعارات','info');
+    }
     function openContactModal() { openModal('contactModal'); }
 
     // ==================== INIT ====================
@@ -270,7 +1004,7 @@
         document.getElementById('newRequestForm').addEventListener('submit', handleNewRequest);
     });
 
-    window.togglePassword = togglePassword; window.showResetPassword = showResetPassword; window.logout = logout; window.showPage = showPage; window.toggleSidebar = toggleSidebar; window.openModal = openModal; window.closeModal = closeModal; window.deleteCategory = deleteCategory; window.deleteItem = deleteItem; window.deleteSchool = deleteSchool; window.toggleSchoolStatus = toggleSchoolStatus; window.generatePassword = generatePassword; window.searchSchools = searchSchools; window.searchItems = searchItems; window.filterRequests = filterRequests; window.filterMyRequests = filterMyRequests; window.showRequestDetails = showRequestDetails; window.processRequest = processRequest; window.printRequestInvoice = printRequestInvoice; window.filterLogs = () => { logsCurrentPage=1; refreshLogs(); }; window.clearOldLogs = clearOldLogs; window.exportLogsToExcel = exportLogsToExcel; window.generateInventoryReport = generateInventoryReport; window.generateTransactionsReport = generateTransactionsReport; window.createFullBackup = createFullBackup; window.previewRestoreFile = previewRestoreFile; window.restoreBackup = restoreBackup; window.addRequestItem = addRequestItem; window.showNotifications = showNotifications; window.openEditQuantityModal = openEditQuantityModal; window.saveEditedQuantity = saveEditedQuantity; window.searchOperationByNumber = searchOperationByNumber; window.printOperationResult = printOperationResult; window.goToLogsPage = goToLogsPage; window.printSingleLog = printSingleLog; window.sendMessageToAdmin = sendMessageToAdmin; window.deleteMessage = deleteMessage; window.openContactModal = openContactModal; window.openReplyModal = openReplyModal; window.sendReply = sendReply; window.refreshMessagesTable = refreshMessagesTable; window.refreshMyMessagesTable = refreshMyMessagesTable;
+    window.togglePassword = togglePassword; window.showResetPassword = showResetPassword; window.logout = logout; window.showPage = showPage; window.toggleSidebar = toggleSidebar; window.openModal = openModal; window.closeModal = closeModal; window.deleteCategory = deleteCategory; window.deleteItem = deleteItem; window.deleteSchool = deleteSchool; window.toggleSchoolStatus = toggleSchoolStatus; window.generatePassword = generatePassword; window.searchSchools = searchSchools; window.searchItems = searchItems; window.filterRequests = filterRequests; window.filterMyRequests = filterMyRequests; window.showRequestDetails = showRequestDetails; window.processRequest = processRequest; window.printRequestInvoice = printRequestInvoice; window.filterLogs = () => { logsCurrentPage=1; refreshLogs(); }; window.clearOldLogs = clearOldLogs; window.exportLogsToExcel = exportLogsToExcel; window.generateInventoryReport = generateInventoryReport; window.generateTransactionsReport = generateTransactionsReport; window.createFullBackup = createFullBackup; window.previewRestoreFile = previewRestoreFile; window.restoreBackup = restoreBackup; window.addRequestItem = addRequestItem; window.showNotifications = showNotifications; window.openEditQuantityModal = openEditQuantityModal; window.saveEditedQuantity = saveEditedQuantity; window.searchOperationByNumber = searchOperationByNumber; window.printOperationResult = printOperationResult; window.goToLogsPage = goToLogsPage; window.printSingleLog = printSingleLog; window.sendMessageToAdmin = sendMessageToAdmin; window.deleteMessage = deleteMessage; window.openContactModal = openContactModal; window.openReplyModal = openReplyModal; window.sendReply = sendReply; window.refreshMessagesTable = refreshMessagesTable; window.refreshMyMessagesTable = refreshMyMessagesTable; window.openAdminSettingsModal = openAdminSettingsModal; window.updateAdminCredentials = updateAdminCredentials;
 </script>
 </body>
 </html>
